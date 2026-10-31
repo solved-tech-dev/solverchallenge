@@ -1,4 +1,4 @@
-# SolverChallenge26 programs
+# SolverChallenge26 Problem Solvers
 
 This repository contains ready-to-build test programs for all ten
 SolverChallenge26 problems.
