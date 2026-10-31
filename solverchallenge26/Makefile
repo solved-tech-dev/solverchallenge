@@ -1,0 +1,38 @@
+.PHONY: all configure build test clean
+
+BUILD_DIR ?= build
+CMAKE ?= cmake
+SC26_PROBLEM ?= 01
+SC26_BUILD_MPI ?= ON
+SC26_BUILD_MPI_GPU ?= OFF
+SC26_SOLUTION_FP128 ?= OFF
+SC26_XIANZHIKRYLOV_ROOT ?=
+SC26_PANGULU_ROOT ?=
+
+CONFIGURE_ARGS := \
+	-DSC26_BUILD_MPI=$(SC26_BUILD_MPI) \
+	-DSC26_BUILD_MPI_GPU=$(SC26_BUILD_MPI_GPU) \
+	-DSC26_ENABLE_FLOAT128=ON \
+	-DSC26_SOLUTION_FP128=$(SC26_SOLUTION_FP128) \
+	-DSC26_PROBLEM=$(SC26_PROBLEM)
+
+ifneq ($(strip $(SC26_XIANZHIKRYLOV_ROOT)),)
+CONFIGURE_ARGS += -DSC26_XIANZHIKRYLOV_ROOT=$(SC26_XIANZHIKRYLOV_ROOT)
+endif
+ifneq ($(strip $(SC26_PANGULU_ROOT)),)
+CONFIGURE_ARGS += -DSC26_PANGULU_ROOT=$(SC26_PANGULU_ROOT)
+endif
+
+all: build
+
+configure:
+	$(CMAKE) -S . -B $(BUILD_DIR) $(CONFIGURE_ARGS)
+
+build: configure
+	$(CMAKE) --build $(BUILD_DIR) --parallel
+
+test: build
+	$(CMAKE) --build $(BUILD_DIR) --target test
+
+clean:
+	$(CMAKE) --build $(BUILD_DIR) --target clean

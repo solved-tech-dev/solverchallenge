@@ -1,0 +1,9 @@
+{
+  "extended_solver": {
+    "method": "fgmres_complex_batch",
+    "batch": 10,
+    "restart": 15,
+    "drop": 0.08,
+    "tolerance": 1e-8
+  }
+}

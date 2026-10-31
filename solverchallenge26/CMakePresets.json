@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "SolverChallenge26 default",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SC26_BUILD_MPI": "ON",
+        "SC26_ENABLE_FLOAT128": "ON",
+        "SC26_SOLUTION_FP128": "ON",
+        "SC26_PROBLEM": "01"
+      }
+    },
+    {
+      "name": "serial",
+      "displayName": "SolverChallenge26 serial",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build-serial",
+      "cacheVariables": {
+        "SC26_BUILD_MPI": "OFF"
+      }
+    },
+    {
+      "name": "bw1000",
+      "displayName": "SolverChallenge26 BW1000 single-process",
+      "inherits": "serial",
+      "binaryDir": "${sourceDir}/build-bw1000",
+      "cacheVariables": {
+        "SC26_BUILD_MPI": "OFF",
+        "SC26_SOLUTION_FP128": "OFF"
+      }
+    },
+    {
+      "name": "bw1000-dd",
+      "displayName": "SolverChallenge26 BW1000 with FP128 solution transport",
+      "inherits": "bw1000",
+      "binaryDir": "${sourceDir}/build-bw1000-dd",
+      "cacheVariables": {
+        "SC26_SOLUTION_FP128": "ON"
+      }
+    }
+  ]
+}

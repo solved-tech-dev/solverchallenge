@@ -1,0 +1,38 @@
+{
+  "config_version": 2,
+  "setup": {
+    "max_levels": 50,
+    "min_coarse_size": 512,
+    "strong_threshold": 0.3,
+    "presweeps": 2,
+    "postsweeps": 2,
+    "coarsest_sweeps": 2,
+    "jacobi_omega": 1,
+    "interp_max_elements": 4,
+    "rap_method": "onestep",
+    "coarsening_method": "pmis",
+    "block_size": 1
+  },
+  "solve": {
+    "method": "amg",
+    "max_iters": 1,
+    "tolerance": 1e-30,
+    "cycle": "v",
+    "smoother": "jacobi_l1",
+    "convergence": "rel_ini",
+    "norm": "l2",
+    "spmv_backend": "manual",
+    "vector_backend": "manual",
+    "coarse_solver": "manual_lu",
+    "coarse_solver_method": "smooth_only",
+    "scaling": "none",
+    "print_level": 0
+  },
+  "execution": {
+    "one_cycle": 1,
+    "zero_start_apply": 1,
+    "coarse_device_mode": 2,
+    "pre_once_max_level": 3,
+    "post_once_max_level": 1
+  }
+}

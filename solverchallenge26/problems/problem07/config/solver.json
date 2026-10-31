@@ -1,0 +1,10 @@
+{
+  "extended_solver": {
+    "method": "bicgstab_hybrid30",
+    "provider": "block_jacobi3",
+    "max_iterations": 1000,
+    "relative_tolerance": 1e-7,
+    "grid": 4096,
+    "check_interval": 8
+  }
+}

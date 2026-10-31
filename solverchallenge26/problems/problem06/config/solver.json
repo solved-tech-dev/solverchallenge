@@ -1,0 +1,10 @@
+{
+  "extended_solver": {
+    "method": "fgmres_complex",
+    "provider": "pangulu",
+    "library_path": "@PANGULU_LIBRARY@",
+    "restart": 60,
+    "max_iterations": 180,
+    "relative_tolerance": 5e-09
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "extended_solver": {
+    "method": "fgmres_dd",
+    "provider": "pangulu",
+    "library_path": "@PANGULU_LIBRARY@",
+    "restart": 10,
+    "max_cycles": 5,
+    "relative_tolerance": 3e-09,
+    "mgs_passes": 2
+  }
+}
