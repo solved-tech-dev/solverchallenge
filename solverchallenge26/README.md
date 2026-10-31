@@ -49,7 +49,9 @@ The required products are:
 The `apps/`, `include/`, `src/`, `problems/`, and `tests/` directories follow
 the public SolverChallenge26 template.
 
-## Step 1: Get the project
+## Setup and Run
+
+### Step 1: Get the project
 
 If Git is available, run:
 
@@ -83,7 +85,7 @@ Make the helper scripts executable:
 chmod +x scripts/*.sh
 ```
 
-## Step 2: Check the basic tools
+### Step 2: Check the basic tools
 
 Run:
 
@@ -99,7 +101,7 @@ this is usually done with a `module load` command specific to that cluster.
 If the Hygon runtime is loaded with modules at your site, load it before
 building and running the programs.
 
-## Step 3: Create the local folders
+### Step 3: Create the local folders
 
 Packages and licenses are deliberately kept outside Git. Run:
 
@@ -113,7 +115,7 @@ mkdir -p local/downloads \
 
 Nothing below `local/` is uploaded to Git.
 
-## Step 4: Put the downloaded packages in `local/downloads`
+### Step 4: Put the downloaded packages in `local/downloads`
 
 Download the product packages matching the target GPU and installed vendor
 runtime. Do not mix packages built for different GPU runtimes.
@@ -148,12 +150,12 @@ find local/downloads -maxdepth 1 -type f -name '*.tar.gz' -print
 
 The output must list the archives you intend to install.
 
-## Step 5: Extract the packages
+### Step 5: Extract the packages
 
 Extract each product you need. The commands below find the archive
 automatically, so the version and date in its name do not need to be typed.
 
-### PanguLU, when needed
+#### PanguLU, when needed
 
 ```bash
 PANGULU_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
@@ -163,7 +165,7 @@ tar -xzf "$PANGULU_ARCHIVE" \
   -C local/packages/pangulu --strip-components=1
 ```
 
-### LinglongAMG, when needed
+#### LinglongAMG, when needed
 
 ```bash
 AMG_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
@@ -173,7 +175,7 @@ tar -xzf "$AMG_ARCHIVE" \
   -C local/packages/linglongamg --strip-components=1
 ```
 
-### XianzhiKrylov
+#### XianzhiKrylov
 
 ```bash
 XK_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
@@ -210,7 +212,7 @@ If an archive contains an extra top-level folder, the `--strip-components=1`
 command normally removes it. If a required file is still in a different
 location, use the custom-path method in the Troubleshooting section.
 
-## Step 6: Put the licenses in `local/licenses`
+### Step 6: Put the licenses in `local/licenses`
 
 Using the file manager is again the easiest method:
 
@@ -235,7 +237,7 @@ ls -l local/licenses
 Each license must match the actual GPU on which you run the program. An
 expired license or a license issued for another machine will not work.
 
-## Step 7: Set the matrix and RHS paths
+### Step 7: Set the matrix and RHS paths
 
 The competition data folder must contain:
 
@@ -277,7 +279,7 @@ ls -l "$DATA_ROOT/solverchallenge26_07"
 You must see both `solverchallenge26_07_A.dat` and
 `solverchallenge26_07_b.dat`.
 
-## Step 8: Build and run all problems
+### Step 8: Build and run all problems
 
 After all required packages, licenses, and data are installed, run:
 
@@ -301,7 +303,7 @@ Summary: /home/alice/solverchallenge26/results/run_20261031T120000+0800/summary.
 
 Your date and path will be different. Do not type `<timestamp>`.
 
-## Find and read the results
+### Find and read the results
 
 The following commands find the newest run, so you do not need to type its
 timestamp:
@@ -359,11 +361,11 @@ To use a different output folder:
 ./scripts/run_all_problems.sh "$DATA_ROOT" my-results
 ```
 
-## Step 9: Run one problem
+### Step 9: Run one problem
 
 Each problem can also be built and run independently.
 
-### Problems with one RHS: T03, T04, T05, T06, and T07
+#### Problems with one RHS: T03, T04, T05, T06, and T07
 
 Replace `07` below with the required problem number:
 
@@ -374,7 +376,7 @@ Replace `07` below with the required problem number:
   "$DATA_ROOT/solverchallenge26_07/solverchallenge26_07_b.dat"
 ```
 
-### T01 and T02
+#### T01 and T02
 
 Build the problem, then select q1 or q2:
 
@@ -391,7 +393,7 @@ SC26_CASE=q2 ./scripts/run_problem.sh 02 \
 Use the same commands with `01` in place of `02` for T01. If `SC26_CASE` is
 omitted, q1 is used.
 
-### T08, T09, or T10
+#### T08, T09, or T10
 
 These problems use one matrix and ten RHS files. The example below runs T10:
 
