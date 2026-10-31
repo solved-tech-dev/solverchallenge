@@ -216,6 +216,15 @@ CASE_ROOT="$DATA_ROOT/solverchallenge26_10"
 
 For T08 or T09, change every `10` in the example to `08` or `09`.
 
+## Reference Environment
+
+The ten solver routes and their performance figures were tested on one
+BW1000 DCU with 16 CPU threads, using the Hygon DTK packages supplied for
+each product. Timing follows the SolverChallenge26 phase rules: it includes
+analysis, numerical preparation, and solve, while excluding input reading,
+initial data upload, object creation, result copying, and residual
+verification.
+
 ## Problem and method map
 
 | Problem | Preconditioner | Solver | RHS |
