@@ -7,10 +7,6 @@ The repository does not contain product libraries, licenses, matrices, or
 right-hand sides. You can download the libraries and licenses from
 [https://store.solved-tech.com/](https://store.solved-tech.com/).
 
-Run the commands on the target GPU machine in one terminal window. Type or
-paste one command block, wait for it to finish, and then run the next block.
-The command blocks do not include a shell prompt. Do not type `$`.
-
 ## What you need
 
 You need:
@@ -22,8 +18,8 @@ You need:
 - the product packages and licenses for the problems you want to run;
 - the competition matrix and right-hand-side files.
 
-Do not use a normal login node for a full run. Start an interactive GPU
-allocation by using the method provided by your cluster.
+Start an interactive GPU allocation by using the method provided by your
+cluster.
 
 The required products are:
 
@@ -33,8 +29,6 @@ The required products are:
 | T03, T06 | PanguLU and XianzhiKrylov |
 | T07, T08 | XianzhiKrylov |
 | T09, T10 | PanguLU |
-
-For a first test, use T07. It needs only XianzhiKrylov.
 
 ## Repository layout
 
@@ -47,7 +41,7 @@ For a first test, use T07. It needs only XianzhiKrylov.
 ├── tests/                      template tests
 ├── configs/local.env.example   optional custom-path template
 ├── scripts/                    commands used in this guide
-├── local/                      local packages, licenses, and data; not committed
+├── local/                      local packages and licenses; not committed
 ├── build/                      build output; created automatically
 └── results/                    run output; created automatically
 ```
@@ -55,12 +49,7 @@ For a first test, use T07. It needs only XianzhiKrylov.
 The `apps/`, `include/`, `src/`, `problems/`, and `tests/` directories follow
 the public SolverChallenge26 template.
 
-## Step 1: Open a terminal and get the project
-
-If a terminal is not already open, press `Ctrl+Alt+T` on many Linux desktops,
-or open the project folder in the file manager, right-click an empty area, and
-choose an item such as **Open in Terminal**. Use `Ctrl+Shift+V` to paste a
-command; `Ctrl+V` may not work in a terminal.
+## Step 1: Get the project
 
 If Git is available, run:
 
@@ -77,8 +66,8 @@ Linux commands distinguish uppercase and lowercase letters, so type them as
 shown. `sudo` is not required.
 
 If the project was downloaded as an archive, extract it with the file manager,
-open a terminal in the extracted `solverchallenge-main/solverchallenge26`
-folder, and run:
+then run the following commands from the extracted
+`solverchallenge-main/solverchallenge26` folder:
 
 ```bash
 pwd
@@ -112,15 +101,14 @@ building and running the programs.
 
 ## Step 3: Create the local folders
 
-Packages, licenses, and data are deliberately kept outside Git. Run:
+Packages and licenses are deliberately kept outside Git. Run:
 
 ```bash
 mkdir -p local/downloads \
          local/packages/pangulu \
          local/packages/linglongamg \
          local/packages/xianzhikrylov \
-         local/licenses \
-         local/data
+         local/licenses
 ```
 
 Nothing below `local/` is uploaded to Git.
@@ -247,7 +235,7 @@ ls -l local/licenses
 Each license must match the actual GPU on which you run the program. An
 expired license or a license issued for another machine will not work.
 
-## Step 7: Put the matrix and RHS data in place
+## Step 7: Set the matrix and RHS paths
 
 The competition data folder must contain:
 
@@ -268,14 +256,9 @@ SolverChallenge26-preparation/
     └── solverchallenge26_10_b_10.dat
 ```
 
-The data may be copied into:
-
-```text
-local/data/SolverChallenge26-preparation
-```
-
-When the data is already on a shared disk or NAS, it does not need to be
-copied. Ask the person who supplied it for the full path.
+Do not copy the matrix or RHS files into the repository. Set `DATA_ROOT` to
+the existing directory that contains `solverchallenge26_01` through
+`solverchallenge26_10`.
 
 For the commands below, store that path in a variable. An absolute path starts
 with `/`. Replace everything between the double quotes with the real path:
