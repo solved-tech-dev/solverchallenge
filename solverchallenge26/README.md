@@ -277,45 +277,7 @@ ls -l "$DATA_ROOT/solverchallenge26_07"
 You must see both `solverchallenge26_07_A.dat` and
 `solverchallenge26_07_b.dat`.
 
-## Recommended first run: T07
-
-Run this after installing only XianzhiKrylov:
-
-```bash
-./scripts/build_problem.sh 07
-```
-
-The last line must contain:
-
-```text
-build complete:
-```
-
-Now set the two input paths:
-
-```bash
-MATRIX="$DATA_ROOT/solverchallenge26_07/solverchallenge26_07_A.dat"
-RHS="$DATA_ROOT/solverchallenge26_07/solverchallenge26_07_b.dat"
-ls -l "$MATRIX" "$RHS"
-```
-
-Run T07:
-
-```bash
-./scripts/run_problem.sh 07 "$MATRIX" "$RHS"
-```
-
-A successful run contains:
-
-```text
-COMPETITION_TIME_SECONDS=
-```
-
-and residual lines ending in `PASS`.
-
-Do not continue to the full run until this first test succeeds.
-
-## Run all problems
+## Step 8: Build and run all problems
 
 After all required packages, licenses, and data are installed, run:
 
@@ -323,8 +285,10 @@ After all required packages, licenses, and data are installed, run:
 ./scripts/run_all_problems.sh "$DATA_ROOT"
 ```
 
-This command builds and runs T01 through T10. It runs both constraints for T01
-and T02 and uses all ten RHS files for T08, T09, and T10.
+This is the main all-in-one command. It handles compilation and execution for
+all ten problems: for each problem, the script builds the executable, runs it,
+and records the output. It runs both constraints for T01 and T02 and all ten
+RHS files for T08, T09, and T10.
 
 The run may take a long time. Do not close the terminal.
 
@@ -378,6 +342,7 @@ T01_q2.log
 T02_q1.log
 T02_q2.log
 T03.log
+T04.log
 T05.log
 T06.log
 T07.log
@@ -394,29 +359,24 @@ To use a different output folder:
 ./scripts/run_all_problems.sh "$DATA_ROOT" my-results
 ```
 
-## Run only one other problem
+## Step 9: Run one problem
+
+Each problem can also be built and run independently.
+
+### Problems with one RHS: T03, T04, T05, T06, and T07
+
+Replace `07` below with the required problem number:
+
+```bash
+./scripts/build_problem.sh 07
+./scripts/run_problem.sh 07 \
+  "$DATA_ROOT/solverchallenge26_07/solverchallenge26_07_A.dat" \
+  "$DATA_ROOT/solverchallenge26_07/solverchallenge26_07_b.dat"
+```
 
 ### T01 and T02
 
-Build the problem first:
-
-```bash
-./scripts/build_problem.sh 01
-```
-
-Run q1 or q2:
-
-```bash
-SC26_CASE=q1 ./scripts/run_problem.sh 01 \
-  "$DATA_ROOT/solverchallenge26_01/solverchallenge26_01_A.dat" \
-  "$DATA_ROOT/solverchallenge26_01/solverchallenge26_01_b.dat"
-
-SC26_CASE=q2 ./scripts/run_problem.sh 01 \
-  "$DATA_ROOT/solverchallenge26_01/solverchallenge26_01_A.dat" \
-  "$DATA_ROOT/solverchallenge26_01/solverchallenge26_01_b.dat"
-```
-
-For T02, change `01` to `02`:
+Build the problem, then select q1 or q2:
 
 ```bash
 ./scripts/build_problem.sh 02
@@ -428,43 +388,22 @@ SC26_CASE=q2 ./scripts/run_problem.sh 02 \
   "$DATA_ROOT/solverchallenge26_02/solverchallenge26_02_b.dat"
 ```
 
-If `SC26_CASE` is omitted, q1 is used.
-
-### T03, T05, T06, or T07
-
-These problems use one RHS. For example, for T05:
-
-```bash
-./scripts/build_problem.sh 05
-./scripts/run_problem.sh 05 \
-  "$DATA_ROOT/solverchallenge26_05/solverchallenge26_05_A.dat" \
-  "$DATA_ROOT/solverchallenge26_05/solverchallenge26_05_b.dat"
-```
-
-For another problem, change every `05` in the block to the problem number.
+Use the same commands with `01` in place of `02` for T01. If `SC26_CASE` is
+omitted, q1 is used.
 
 ### T08, T09, or T10
 
-These problems use one matrix and ten RHS files. For example, for T10:
+These problems use one matrix and ten RHS files. The example below runs T10:
 
 ```bash
 ./scripts/build_problem.sh 10
 CASE_ROOT="$DATA_ROOT/solverchallenge26_10"
 ./scripts/run_problem.sh 10 \
   "$CASE_ROOT/solverchallenge26_10_A.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_01.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_02.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_03.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_04.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_05.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_06.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_07.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_08.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_09.dat" \
-  "$CASE_ROOT/solverchallenge26_10_b_10.dat"
+  "$CASE_ROOT"/solverchallenge26_10_b_{01..10}.dat
 ```
 
-For T08 or T09, change every `10` in the block to `08` or `09`.
+For T08 or T09, change every `10` in the example to `08` or `09`.
 
 ## Problem and method map
 
