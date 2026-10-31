@@ -8,29 +8,29 @@ reused from `src/`.
 
 The populated slots in this repository are:
 
-| Slot | Callback type | Outer method | Inner short Krylov | Preconditioner |
+| Slot | Callback type | Preconditioner | Outer method | Inner short Krylov |
 |---|---|---|---|---|
-| problem01 | iterative | XianzhiKrylov FGMRES-DD | BiCGStab, max 4 steps | LinglongAMG |
-| problem02 q1 | iterative | XianzhiKrylov Projected PCG | none | LinglongAMG |
-| problem02 q2 | iterative | XianzhiKrylov FGMRES-DD | FGMRES, max 4 steps | LinglongAMG |
-| problem03 | iterative | XianzhiKrylov FGMRES-DD | none | PanguLU |
-| problem04 | not selected | placeholder | none | none |
-| problem05 | iterative | XianzhiKrylov BiCGStab | none | LinglongAMG |
-| problem06 | iterative | XianzhiKrylov complex FGMRES | none | PanguLU |
-| problem07 | iterative | XianzhiKrylov hybrid BiCGStab | none | XianzhiKrylov 3×3 block Jacobi |
-| problem08 | iterative | XianzhiKrylov batched complex FGMRES | none | filtered ILU(0) |
-| problem09 | direct | PanguLU direct LU | none | none |
-| problem10 | direct | PanguLU complex direct LU | none | none |
+| problem01 | iterative | LinglongAMG | XianzhiKrylov FGMRES-DD | BiCGStab, max 4 steps |
+| problem02 q1 | iterative | LinglongAMG | XianzhiKrylov Projected PCG | none |
+| problem02 q2 | iterative | LinglongAMG | XianzhiKrylov FGMRES-DD | FGMRES, max 4 steps |
+| problem03 | iterative | PanguLU | XianzhiKrylov FGMRES-DD | none |
+| problem04 | not selected | none | placeholder | none |
+| problem05 | iterative | LinglongAMG | XianzhiKrylov BiCGStab | none |
+| problem06 | iterative | PanguLU | XianzhiKrylov complex FGMRES | none |
+| problem07 | iterative | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov hybrid BiCGStab | none |
+| problem08 | iterative | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | none |
+| problem09 | direct | none | PanguLU direct LU | none |
+| problem10 | direct | none | PanguLU complex direct LU | none |
 
 `inner_method` is a short Krylov process used inside each preconditioner
 application of the outer `fgmres_dd`. It does not perform the final
 convergence check. The suffix `4` means a maximum of four inner iterations.
 
-The XianzhiKrylov problems use the common adapter in
-`src/product/xianzhi_solver.c`. Problems 09 and 10 use
-`src/product/pangulu_direct_solver.cpp`. These files contain product calls and
-device buffer management only; they do not contain a program entry point or
-re-read matrix files.
+Problems 09 and 10 use `src/product/pangulu_direct_solver.cpp`. The
+XianzhiKrylov problems use the common adapter in
+`src/product/xianzhi_solver.c`. These files contain product calls and device
+buffer management only; they do not contain a program entry point or re-read
+matrix files.
 
 `SC26_SolverInput` keeps the original single-RHS fields and adds
 `rhs_count`, `b_all`, `b_im_all`, `x_all`, and `x_im_all` for the ten-RHS

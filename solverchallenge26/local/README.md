@@ -6,18 +6,18 @@ After downloading the release matching the target GPU and toolkit, extract:
 ```text
 local/
 ├── packages/
-│   ├── xianzhikrylov/
+│   ├── pangulu/
 │   │   ├── include/
 │   │   └── lib/
 │   ├── linglongamg/
 │   │   └── lib/
-│   └── pangulu/
+│   └── xianzhikrylov/
 │       ├── include/
 │       └── lib/
 └── licenses/
-    ├── xianzhikrylov.license.key
+    ├── pangulu.license.key
     ├── linglongamg.license.key
-    └── pangulu.license.key
+    └── xianzhikrylov.license.key
 ```
 
 Each package directory must contain the package payload directly. If an
@@ -27,17 +27,17 @@ extra level or point to the real path from `configs/local.env`.
 Typical extraction commands:
 
 ```bash
-mkdir -p local/packages/xianzhikrylov \
+mkdir -p local/packages/pangulu \
          local/packages/linglongamg \
-         local/packages/pangulu \
+         local/packages/xianzhikrylov \
          local/licenses
 
-tar -xf XIANZHIKRYLOV_PACKAGE.tar.gz \
-  -C local/packages/xianzhikrylov --strip-components=1
-tar -xf LINGLONGAMG_PACKAGE.tar.gz \
-  -C local/packages/linglongamg --strip-components=1
 tar -xf PANGULU_PACKAGE.tar.gz \
   -C local/packages/pangulu --strip-components=1
+tar -xf LINGLONGAMG_PACKAGE.tar.gz \
+  -C local/packages/linglongamg --strip-components=1
+tar -xf XIANZHIKRYLOV_PACKAGE.tar.gz \
+  -C local/packages/xianzhikrylov --strip-components=1
 ```
 
 Use the actual archive names and the package matching the installed DTK

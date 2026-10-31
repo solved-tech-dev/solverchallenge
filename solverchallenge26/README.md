@@ -29,8 +29,8 @@ The required products are:
 
 | Problems | Packages and licenses |
 |---|---|
-| T01, T02, T05 | XianzhiKrylov and LinglongAMG |
-| T03, T06 | XianzhiKrylov and PanguLU |
+| T01, T02, T05 | LinglongAMG and XianzhiKrylov |
+| T03, T06 | PanguLU and XianzhiKrylov |
 | T07, T08 | XianzhiKrylov |
 | T09, T10 | PanguLU |
 
@@ -116,9 +116,9 @@ Packages, licenses, and data are deliberately kept outside Git. Run:
 
 ```bash
 mkdir -p local/downloads \
-         local/packages/xianzhikrylov \
-         local/packages/linglongamg \
          local/packages/pangulu \
+         local/packages/linglongamg \
+         local/packages/xianzhikrylov \
          local/licenses \
          local/data
 ```
@@ -134,8 +134,8 @@ Using the file manager is the easiest method:
 
 1. Open `local/downloads` in the file manager.
 2. Copy the downloaded package archives into that folder.
-3. Keep exactly one XianzhiKrylov archive, one LinglongAMG archive, and one
-   PanguLU archive.
+3. Keep exactly one PanguLU archive, one LinglongAMG archive, and one
+   XianzhiKrylov archive.
 
 If the archives are in the default Downloads folder, they can also be copied
 from a terminal. Here `~` means your home folder, usually
@@ -144,12 +144,12 @@ from a terminal. Here `~` means your home folder, usually
 
 ```bash
 ls ~/Downloads
-cp ~/Downloads/FILE_NAME_XIANZHIKRYLOV.tar.gz local/downloads/
-cp ~/Downloads/FILE_NAME_LINGLONGAMG.tar.gz local/downloads/
 cp ~/Downloads/FILE_NAME_PANGULU.tar.gz local/downloads/
+cp ~/Downloads/FILE_NAME_LINGLONGAMG.tar.gz local/downloads/
+cp ~/Downloads/FILE_NAME_XIANZHIKRYLOV.tar.gz local/downloads/
 ```
 
-You may skip the LinglongAMG and PanguLU commands when you only want to run
+You may skip the PanguLU and LinglongAMG commands when you only want to run
 T07 or T08.
 
 Check what is present:
@@ -165,14 +165,14 @@ The output must list the archives you intend to install.
 Extract each product you need. The commands below find the archive
 automatically, so the version and date in its name do not need to be typed.
 
-### XianzhiKrylov
+### PanguLU, when needed
 
 ```bash
-XK_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
-  -name 'xianzhikrylov-*.tar.gz' -print -quit)"
-printf 'XianzhiKrylov archive: %s\n' "$XK_ARCHIVE"
-tar -xzf "$XK_ARCHIVE" \
-  -C local/packages/xianzhikrylov --strip-components=1
+PANGULU_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
+  -name 'pangulu-*.tar.gz' -print -quit)"
+printf 'PanguLU archive: %s\n' "$PANGULU_ARCHIVE"
+tar -xzf "$PANGULU_ARCHIVE" \
+  -C local/packages/pangulu --strip-components=1
 ```
 
 ### LinglongAMG, when needed
@@ -185,35 +185,35 @@ tar -xzf "$AMG_ARCHIVE" \
   -C local/packages/linglongamg --strip-components=1
 ```
 
-### PanguLU, when needed
+### XianzhiKrylov
 
 ```bash
-PANGULU_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
-  -name 'pangulu-*.tar.gz' -print -quit)"
-printf 'PanguLU archive: %s\n' "$PANGULU_ARCHIVE"
-tar -xzf "$PANGULU_ARCHIVE" \
-  -C local/packages/pangulu --strip-components=1
+XK_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
+  -name 'xianzhikrylov-*.tar.gz' -print -quit)"
+printf 'XianzhiKrylov archive: %s\n' "$XK_ARCHIVE"
+tar -xzf "$XK_ARCHIVE" \
+  -C local/packages/xianzhikrylov --strip-components=1
 ```
 
 The helper scripts expect the package contents directly below each product
 folder. The important files must be at these locations:
 
 ```text
-local/packages/xianzhikrylov/include/XianzhiKrylovAPI.h
-local/packages/xianzhikrylov/lib/libXianzhiKrylov.so
-local/packages/linglongamg/lib/liblinglongamg.so
 local/packages/pangulu/include/pangulu.h
 local/packages/pangulu/lib/libpangulu.so
+local/packages/linglongamg/lib/liblinglongamg.so
+local/packages/xianzhikrylov/include/XianzhiKrylovAPI.h
+local/packages/xianzhikrylov/lib/libXianzhiKrylov.so
 ```
 
 Check the files for the products you installed:
 
 ```bash
-test -f local/packages/xianzhikrylov/include/XianzhiKrylovAPI.h && echo "XianzhiKrylov header: OK"
-test -f local/packages/xianzhikrylov/lib/libXianzhiKrylov.so && echo "XianzhiKrylov library: OK"
-test -f local/packages/linglongamg/lib/liblinglongamg.so && echo "LinglongAMG library: OK"
 test -f local/packages/pangulu/include/pangulu.h && echo "PanguLU header: OK"
 test -f local/packages/pangulu/lib/libpangulu.so && echo "PanguLU library: OK"
+test -f local/packages/linglongamg/lib/liblinglongamg.so && echo "LinglongAMG library: OK"
+test -f local/packages/xianzhikrylov/include/XianzhiKrylovAPI.h && echo "XianzhiKrylov header: OK"
+test -f local/packages/xianzhikrylov/lib/libXianzhiKrylov.so && echo "XianzhiKrylov library: OK"
 ```
 
 The checks for products you do not need may print nothing.
@@ -233,9 +233,9 @@ Using the file manager is again the easiest method:
 The file names only need to match these patterns:
 
 ```text
-local/licenses/xianzhikrylov*.key
-local/licenses/linglongamg*.key
 local/licenses/pangulu*.key
+local/licenses/linglongamg*.key
+local/licenses/xianzhikrylov*.key
 ```
 
 For example:
@@ -486,19 +486,19 @@ For T08 or T09, change every `10` in the block to `08` or `09`.
 
 ## Problem and method map
 
-| Problem | Method | Preconditioner | RHS |
+| Problem | Preconditioner | Method | RHS |
 |---|---|---|---:|
-| T01 | XianzhiKrylov FGMRES-DD; BiCGStab up to 4 steps inside each preconditioner application | LinglongAMG | 1 |
-| T02 q1 | XianzhiKrylov PCG with constant-mode projection | LinglongAMG | 1 |
-| T02 q2 | XianzhiKrylov FGMRES-DD; FGMRES up to 4 steps inside each preconditioner application | LinglongAMG | 1 |
-| T03 | XianzhiKrylov FGMRES-DD | PanguLU | 1 |
-| T04 | not available yet | none | 0 |
-| T05 | XianzhiKrylov BiCGStab | LinglongAMG | 1 |
-| T06 | XianzhiKrylov complex FGMRES | PanguLU | 1 |
-| T07 | XianzhiKrylov hybrid BiCGStab | XianzhiKrylov 3×3 block Jacobi | 1 |
-| T08 | XianzhiKrylov batched complex FGMRES | filtered ILU(0) | 10 |
-| T09 | PanguLU direct LU | none | 10 |
-| T10 | PanguLU complex direct LU | none | 10 |
+| T01 | LinglongAMG | XianzhiKrylov FGMRES-DD; BiCGStab up to 4 steps inside each preconditioner application | 1 |
+| T02 q1 | LinglongAMG | XianzhiKrylov PCG with constant-mode projection | 1 |
+| T02 q2 | LinglongAMG | XianzhiKrylov FGMRES-DD; FGMRES up to 4 steps inside each preconditioner application | 1 |
+| T03 | PanguLU | XianzhiKrylov FGMRES-DD | 1 |
+| T04 | none | not available yet | 0 |
+| T05 | LinglongAMG | XianzhiKrylov BiCGStab | 1 |
+| T06 | PanguLU | XianzhiKrylov complex FGMRES | 1 |
+| T07 | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov hybrid BiCGStab | 1 |
+| T08 | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | 10 |
+| T09 | none | PanguLU direct LU | 10 |
+| T10 | none | PanguLU complex direct LU | 10 |
 
 `PCG with constant-mode projection` does not modify the final solution after
 solving. It builds a mean-zero working residual for the PCG iteration and
@@ -557,13 +557,13 @@ apps/
   -> problems/problemNN/solver.c
   -> callback helper
   -> src/product/
-  -> XianzhiKrylov or PanguLU
+  -> PanguLU or XianzhiKrylov
 ```
 
-- XianzhiKrylov API calls: `src/product/xianzhi_solver.c`
-- XianzhiKrylov callback bridge: `problems/xianzhi_problem_helpers.h`
 - PanguLU direct API calls: `src/product/pangulu_direct_solver.cpp`
 - PanguLU callback bridge: `problems/pangulu_problem_helpers.h`
+- XianzhiKrylov API calls: `src/product/xianzhi_solver.c`
+- XianzhiKrylov callback bridge: `problems/xianzhi_problem_helpers.h`
 
 Each `problems/problemNN/solver.c` selects the configuration and connects the
 official solver callback to the product adapter.
@@ -608,9 +608,9 @@ Check the product folder:
 
 ```bash
 find local/packages -maxdepth 4 -type f \
-  \( -name 'XianzhiKrylovAPI.h' -o -name 'libXianzhiKrylov.so' \
+  \( -name 'pangulu.h' -o -name 'libpangulu.so' \
      -o -name 'liblinglongamg.so' \
-     -o -name 'pangulu.h' -o -name 'libpangulu.so' \) -print
+     -o -name 'XianzhiKrylovAPI.h' -o -name 'libXianzhiKrylov.so' \) -print
 ```
 
 If the files are under different absolute paths, create a custom path file:
@@ -625,9 +625,9 @@ lines. Put the real absolute paths after `=`.
 Example:
 
 ```text
-XIANZHIKRYLOV_ROOT=/home/alice/products/xianzhikrylov
-SC26_LINGLONGAMG_LIBRARY=/home/alice/products/linglongamg/lib/liblinglongamg.so
 PANGULU_ROOT=/home/alice/products/pangulu
+SC26_LINGLONGAMG_LIBRARY=/home/alice/products/linglongamg/lib/liblinglongamg.so
+XIANZHIKRYLOV_ROOT=/home/alice/products/xianzhikrylov
 ```
 
 ### `License failure`, `LICENSE_EXPIRED`, or an authorization error
