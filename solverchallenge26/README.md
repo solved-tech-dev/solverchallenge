@@ -1,6 +1,6 @@
 # SolverChallenge26 Problem Solvers
 
-This repository contains ready-to-build test programs for all ten
+This repository contains ready-to-build solver programs for all ten
 SolverChallenge26 problems.
 
 The repository does not contain product libraries, licenses, matrices, or
