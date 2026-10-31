@@ -1,15 +1,15 @@
-# SolverChallenge26 programs for the BW1000 HIP environment
+# SolverChallenge26 programs
 
-This repository contains ready-to-build test programs for nine
-SolverChallenge26 problems. T04 is not available yet.
+This repository contains ready-to-build test programs for all ten
+SolverChallenge26 problems.
 
 The repository does not contain product libraries, licenses, matrices, or
 right-hand sides. You can download the libraries and licenses from
 [https://store.solved-tech.com/](https://store.solved-tech.com/).
 
-Run the commands on the BW1000 machine in one terminal window. Type or paste
-one command block, wait for it to finish, and then run the next block. The
-commands do not include the terminal prompt; do not type `$`.
+Run the commands on the target GPU machine in one terminal window. Type or
+paste one command block, wait for it to finish, and then run the next block.
+The command blocks do not include a shell prompt. Do not type `$`.
 
 ## What you need
 
@@ -18,7 +18,7 @@ You need:
 - a Linux computer or an interactive GPU allocation from your cluster;
 - a C and C++ compiler;
 - CMake 3.21 or newer;
-- the Hygon runtime required by the BW1000 package;
+- the vendor runtime required by the selected product package;
 - the product packages and licenses for the problems you want to run;
 - the competition matrix and right-hand-side files.
 
@@ -127,8 +127,8 @@ Nothing below `local/` is uploaded to Git.
 
 ## Step 4: Put the downloaded packages in `local/downloads`
 
-Download the BW1000 packages matching the Hygon runtime installed on your
-machine. Do not use a CUDA package on BW1000.
+Download the product packages matching the target GPU and installed vendor
+runtime. Do not mix packages built for different GPU runtimes.
 
 Using the file manager is the easiest method:
 
@@ -332,7 +332,7 @@ and residual lines ending in `PASS`.
 
 Do not continue to the full run until this first test succeeds.
 
-## Run all available problems
+## Run all problems
 
 After all required packages, licenses, and data are installed, run:
 
@@ -340,9 +340,8 @@ After all required packages, licenses, and data are installed, run:
 ./scripts/run_all_problems.sh "$DATA_ROOT"
 ```
 
-This command builds T01, T02, T03, T05, T06, T07, T08, T09, and T10. It runs
-both constraints for T01 and T02 and uses all ten RHS files for T08, T09, and
-T10. T04 is recorded as skipped.
+This command builds and runs T01 through T10. It runs both constraints for T01
+and T02 and uses all ten RHS files for T08, T09, and T10.
 
 The run may take a long time. Do not close the terminal.
 
@@ -381,7 +380,7 @@ folder. The status values mean:
 - `PASS`: the program completed and the residual check passed.
 - `FAIL`: the program failed. Read the log path in the third column.
 - `INPUT_MISSING`: a matrix or RHS file is missing or unreadable.
-- `SKIPPED`: the case is intentionally not available. T04 uses this status.
+- `SKIPPED`: the case is intentionally not run.
 
 To read a failed T01 q1 log:
 
@@ -492,7 +491,7 @@ For T08 or T09, change every `10` in the block to `08` or `09`.
 | T02 q1 | LinglongAMG | XianzhiKrylov PCG with constant-mode projection | 1 |
 | T02 q2 | LinglongAMG | XianzhiKrylov FGMRES-DD; FGMRES up to 4 steps inside each preconditioner application | 1 |
 | T03 | PanguLU | XianzhiKrylov FGMRES-DD | 1 |
-| T04 | none | not available yet | 0 |
+| T04 | LinglongAMG elasticity AMG | XianzhiKrylov PCG | 1 |
 | T05 | LinglongAMG | XianzhiKrylov BiCGStab | 1 |
 | T06 | PanguLU | XianzhiKrylov complex FGMRES | 1 |
 | T07 | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov hybrid BiCGStab | 1 |
@@ -677,10 +676,6 @@ For T08, T09, and T10, make sure all ten files from `_b_01.dat` through
 You are probably running on a login node instead of an interactive GPU
 allocation. Exit and start an interactive GPU session with the command
 provided by your cluster.
-
-### T04 is reported as skipped
-
-This is expected. T04 is intentionally not implemented in this repository yet.
 
 ### A problem ends with `FAIL`
 
