@@ -60,24 +60,9 @@ git clone https://github.com/solved-tech-dev/solverchallenge.git
 cd solverchallenge/solverchallenge26
 ```
 
-The first line downloads the repository. The second line enters this
-SolverChallenge26 project inside it.
-
-All remaining commands must be run from this `solverchallenge26` folder.
-Linux commands distinguish uppercase and lowercase letters, so type them as
-shown. `sudo` is not required.
-
-If the project was downloaded as an archive, extract it with the file manager,
-then run the following commands from the extracted
-`solverchallenge-main/solverchallenge26` folder:
-
-```bash
-pwd
-ls
-```
-
-`pwd` must end in `solverchallenge26`, and `ls` must show `scripts`. If you do
-not see `scripts`, you are in the wrong folder.
+Run all remaining commands from the project directory. If using an archive,
+extract it and enter the extracted
+`solverchallenge-main/solverchallenge26` directory.
 
 Make the helper scripts executable:
 
