@@ -7,39 +7,9 @@ The repository does not contain product libraries, licenses, matrices, or
 right-hand sides. You can download the libraries and licenses from
 [https://store.solved-tech.com/](https://store.solved-tech.com/).
 
-## If you are new to Linux
-
-You do not need to learn CMake or read the source code to run these programs.
-
-If a terminal is not already open:
-
-- on many Linux desktops, press `Ctrl+Alt+T`;
-- or open the project folder in the file manager, right-click an empty area,
-  and choose an item such as **Open in Terminal**.
-
-A terminal normally shows text only. A command has finished when the command
-prompt appears again. To paste into a terminal, use `Ctrl+Shift+V`; the usual
-`Ctrl+V` shortcut may not work.
-
-Use one terminal window and work through the sections below in order. Type or
-paste one command block before running it. Wait until the command finishes and
-the normal command prompt returns before starting the next block.
-
-The commands in this guide do not begin with `$`. Do not type `$`.
-
-Four terms are used throughout this guide:
-
-- The **project folder** is the folder named `solverchallenge26`.
-- The **current folder** is the folder shown by the `pwd` command.
-- `~` means your home folder, usually `/home/YOUR_USER_NAME`.
-- An **absolute path** starts with `/`, for example
-  `/home/alice/data/solverchallenge26_07_A.dat`.
-
-All commands in this guide are run from the project folder unless a section
-says otherwise.
-
-Linux commands distinguish uppercase and lowercase letters. Type them exactly
-as shown. `sudo` is not required for this guide.
+Run the commands on the BW1000 machine in one terminal window. Type or paste
+one command block, wait for it to finish, and then run the next block. The
+commands do not include the terminal prompt; do not type `$`.
 
 ## What you need
 
@@ -85,7 +55,12 @@ For a first test, use T07. It needs only XianzhiKrylov.
 The `apps/`, `include/`, `src/`, `problems/`, and `tests/` directories follow
 the public SolverChallenge26 template.
 
-## Step 1: Get the project
+## Step 1: Open a terminal and get the project
+
+If a terminal is not already open, press `Ctrl+Alt+T` on many Linux desktops,
+or open the project folder in the file manager, right-click an empty area, and
+choose an item such as **Open in Terminal**. Use `Ctrl+Shift+V` to paste a
+command; `Ctrl+V` may not work in a terminal.
 
 If Git is available, run:
 
@@ -96,6 +71,10 @@ cd solverchallenge/solverchallenge26
 
 The first line downloads the repository. The second line enters this
 SolverChallenge26 project inside it.
+
+All remaining commands must be run from this `solverchallenge26` folder.
+Linux commands distinguish uppercase and lowercase letters, so type them as
+shown. `sudo` is not required.
 
 If the project was downloaded as an archive, extract it with the file manager,
 open a terminal in the extracted `solverchallenge-main/solverchallenge26`
@@ -159,7 +138,8 @@ Using the file manager is the easiest method:
    PanguLU archive.
 
 If the archives are in the default Downloads folder, they can also be copied
-from a terminal. Replace `FILE_NAME` with the real names shown by
+from a terminal. Here `~` means your home folder, usually
+`/home/YOUR_USER_NAME`. Replace `FILE_NAME` with the real names shown by
 `ls ~/Downloads`:
 
 ```bash
@@ -297,8 +277,8 @@ local/data/SolverChallenge26-preparation
 When the data is already on a shared disk or NAS, it does not need to be
 copied. Ask the person who supplied it for the full path.
 
-For the commands below, store that path in a variable. Replace everything
-between the double quotes with the real path:
+For the commands below, store that path in a variable. An absolute path starts
+with `/`. Replace everything between the double quotes with the real path:
 
 ```bash
 DATA_ROOT="/absolute/path/to/SolverChallenge26-preparation"
