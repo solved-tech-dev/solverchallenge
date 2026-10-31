@@ -227,7 +227,7 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 | T04 | LinglongAMG elasticity AMG | XianzhiKrylov PCG | 1 |
 | T05 | LinglongAMG | XianzhiKrylov BiCGStab | 1 |
 | T06 | PanguLU | XianzhiKrylov complex FGMRES | 1 |
-| T07 | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov hybrid BiCGStab | 1 |
+| T07 | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov BiCGStab | 1 |
 | T08 | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | 10 |
 | T09 | none | PanguLU direct LU | 10 |
 | T10 | none | PanguLU complex direct LU | 10 |

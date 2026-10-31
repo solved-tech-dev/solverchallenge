@@ -17,7 +17,7 @@ The populated slots in this repository are:
 | problem04 | not selected | none | placeholder | none |
 | problem05 | iterative | LinglongAMG | XianzhiKrylov BiCGStab | none |
 | problem06 | iterative | PanguLU | XianzhiKrylov complex FGMRES | none |
-| problem07 | iterative | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov hybrid BiCGStab | none |
+| problem07 | iterative | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov BiCGStab | none |
 | problem08 | iterative | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | none |
 | problem09 | direct | none | PanguLU direct LU | none |
 | problem10 | direct | none | PanguLU complex direct LU | none |
