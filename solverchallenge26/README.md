@@ -79,12 +79,8 @@ cmake --version
 c++ --version
 ```
 
-Each command must print a version. If you see `command not found`, ask your
-cluster administrator how to load CMake and the C++ compiler. On a cluster,
-this is usually done with a `module load` command specific to that cluster.
-
-If the Hygon runtime is loaded with modules at your site, load it before
-building and running the programs.
+If a command is missing, load the corresponding environment module before
+continuing.
 
 ### Step 3: Create the local folders
 
@@ -98,200 +94,59 @@ mkdir -p local/downloads \
          local/licenses
 ```
 
-Nothing below `local/` is uploaded to Git.
-
 ### Step 4: Put the downloaded packages in `local/downloads`
 
-Download the product packages matching the target GPU and installed vendor
-runtime. Do not mix packages built for different GPU runtimes.
+Copy one package archive for each required product into `local/downloads`:
 
-Using the file manager is the easiest method:
-
-1. Open `local/downloads` in the file manager.
-2. Copy the downloaded package archives into that folder.
-3. Keep exactly one PanguLU archive, one LinglongAMG archive, and one
-   XianzhiKrylov archive.
-
-If the archives are in the default Downloads folder, they can also be copied
-from a terminal. Here `~` means your home folder, usually
-`/home/YOUR_USER_NAME`. Replace `FILE_NAME` with the real names shown by
-`ls ~/Downloads`:
-
-```bash
-ls ~/Downloads
-cp ~/Downloads/FILE_NAME_PANGULU.tar.gz local/downloads/
-cp ~/Downloads/FILE_NAME_LINGLONGAMG.tar.gz local/downloads/
-cp ~/Downloads/FILE_NAME_XIANZHIKRYLOV.tar.gz local/downloads/
+```text
+local/downloads/pangulu-*.tar.gz
+local/downloads/linglongamg-*.tar.gz
+local/downloads/xianzhikrylov-*.tar.gz
 ```
 
-You may skip the PanguLU and LinglongAMG commands when you only want to run
-T07 or T08.
-
-Check what is present:
-
-```bash
-find local/downloads -maxdepth 1 -type f -name '*.tar.gz' -print
-```
-
-The output must list the archives you intend to install.
+Use packages built for the target GPU and its installed vendor runtime.
 
 ### Step 5: Extract the packages
 
-Extract each product you need. The commands below find the archive
-automatically, so the version and date in its name do not need to be typed.
-
-#### PanguLU, when needed
-
 ```bash
-PANGULU_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
-  -name 'pangulu-*.tar.gz' -print -quit)"
-printf 'PanguLU archive: %s\n' "$PANGULU_ARCHIVE"
-tar -xzf "$PANGULU_ARCHIVE" \
+tar -xzf local/downloads/pangulu-*.tar.gz \
   -C local/packages/pangulu --strip-components=1
-```
-
-#### LinglongAMG, when needed
-
-```bash
-AMG_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
-  -name 'linglongamg-*.tar.gz' -print -quit)"
-printf 'LinglongAMG archive: %s\n' "$AMG_ARCHIVE"
-tar -xzf "$AMG_ARCHIVE" \
+tar -xzf local/downloads/linglongamg-*.tar.gz \
   -C local/packages/linglongamg --strip-components=1
-```
-
-#### XianzhiKrylov
-
-```bash
-XK_ARCHIVE="$(find local/downloads -maxdepth 1 -type f \
-  -name 'xianzhikrylov-*.tar.gz' -print -quit)"
-printf 'XianzhiKrylov archive: %s\n' "$XK_ARCHIVE"
-tar -xzf "$XK_ARCHIVE" \
+tar -xzf local/downloads/xianzhikrylov-*.tar.gz \
   -C local/packages/xianzhikrylov --strip-components=1
 ```
 
-The helper scripts expect the package contents directly below each product
-folder. The important files must be at these locations:
-
-```text
-local/packages/pangulu/include/pangulu.h
-local/packages/pangulu/lib/libpangulu.so
-local/packages/linglongamg/lib/liblinglongamg.so
-local/packages/xianzhikrylov/include/XianzhiKrylovAPI.h
-local/packages/xianzhikrylov/lib/libXianzhiKrylov.so
-```
-
-Check the files for the products you installed:
-
-```bash
-test -f local/packages/pangulu/include/pangulu.h && echo "PanguLU header: OK"
-test -f local/packages/pangulu/lib/libpangulu.so && echo "PanguLU library: OK"
-test -f local/packages/linglongamg/lib/liblinglongamg.so && echo "LinglongAMG library: OK"
-test -f local/packages/xianzhikrylov/include/XianzhiKrylovAPI.h && echo "XianzhiKrylov header: OK"
-test -f local/packages/xianzhikrylov/lib/libXianzhiKrylov.so && echo "XianzhiKrylov library: OK"
-```
-
-The checks for products you do not need may print nothing.
-
-If an archive contains an extra top-level folder, the `--strip-components=1`
-command normally removes it. If a required file is still in a different
-location, use the custom-path method in the Troubleshooting section.
+The scripts load these package directories automatically.
 
 ### Step 6: Put the licenses in `local/licenses`
 
-Using the file manager is again the easiest method:
-
-1. Open `local/licenses`.
-2. Copy the downloaded license files into this folder.
-3. Keep only one valid license for each product.
-
-The file names only need to match these patterns:
-
-```text
-local/licenses/pangulu*.key
-local/licenses/linglongamg*.key
-local/licenses/xianzhikrylov*.key
-```
-
-For example:
+Copy one valid license for each required product into `local/licenses`.
+Keep the downloaded file names.
 
 ```bash
 ls -l local/licenses
 ```
 
-Each license must match the actual GPU on which you run the program. An
-expired license or a license issued for another machine will not work.
-
 ### Step 7: Set the matrix and RHS paths
 
-The competition data folder must contain:
-
-```text
-SolverChallenge26-preparation/
-├── solverchallenge26_01/
-│   ├── solverchallenge26_01_A.dat
-│   └── solverchallenge26_01_b.dat
-├── solverchallenge26_02/
-│   ├── solverchallenge26_02_A.dat
-│   └── solverchallenge26_02_b.dat
-├── ...
-└── solverchallenge26_10/
-    ├── solverchallenge26_10_A.dat
-    ├── solverchallenge26_10_b_01.dat
-    ├── solverchallenge26_10_b_02.dat
-    ├── ...
-    └── solverchallenge26_10_b_10.dat
-```
-
-Do not copy the matrix or RHS files into the repository. Set `DATA_ROOT` to
-the existing directory that contains `solverchallenge26_01` through
-`solverchallenge26_10`.
-
-For the commands below, store that path in a variable. An absolute path starts
-with `/`. Replace everything between the double quotes with the real path:
+Set `DATA_ROOT` to the existing directory containing
+`solverchallenge26_01` through `solverchallenge26_10`. Do not copy the data
+files into this repository.
 
 ```bash
 DATA_ROOT="/absolute/path/to/SolverChallenge26-preparation"
-test -d "$DATA_ROOT" && echo "Data folder: OK"
 ```
-
-To check T07:
-
-```bash
-ls -l "$DATA_ROOT/solverchallenge26_07"
-```
-
-You must see both `solverchallenge26_07_A.dat` and
-`solverchallenge26_07_b.dat`.
 
 ### Step 8: Build and run all problems
-
-After all required packages, licenses, and data are installed, run:
 
 ```bash
 ./scripts/run_all_problems.sh "$DATA_ROOT"
 ```
 
-This is the main all-in-one command. It handles compilation and execution for
-all ten problems: for each problem, the script builds the executable, runs it,
-and records the output. It runs both constraints for T01 and T02 and all ten
-RHS files for T08, T09, and T10.
-
-The run may take a long time. Do not close the terminal.
-
-When it finishes, the terminal prints the exact output folder, for example:
-
-```text
-Results: /home/alice/solverchallenge26/results/run_20261031T120000+0800
-Summary: /home/alice/solverchallenge26/results/run_20261031T120000+0800/summary.tsv
-```
-
-Your date and path will be different. Do not type `<timestamp>`.
+The script builds and runs all ten problems and prints the result directory.
 
 ### Find and read the results
-
-The following commands find the newest run, so you do not need to type its
-timestamp:
 
 ```bash
 latest_run="$(ls -dt results/run_* | head -n 1)"
@@ -308,42 +163,11 @@ results/run_<timestamp>/
 └── run-logs/
 ```
 
-`summary.tsv` has three columns: case name, status, and a log path or input
-folder. The status values mean:
-
-- `PASS`: the program completed and the residual check passed.
-- `FAIL`: the program failed. Read the log path in the third column.
-- `INPUT_MISSING`: a matrix or RHS file is missing or unreadable.
-- `SKIPPED`: the case is intentionally not run.
-
-To read a failed T01 q1 log:
+`PASS` means the solve and residual check succeeded. For a failed case, open
+its log:
 
 ```bash
 cat "$latest_run/run-logs/T01_q1.log"
-```
-
-Other log names include:
-
-```text
-T01_q2.log
-T02_q1.log
-T02_q2.log
-T03.log
-T04.log
-T05.log
-T06.log
-T07.log
-T08.log
-T09.log
-T10.log
-```
-
-Read from the first error, not only from the final line.
-
-To use a different output folder:
-
-```bash
-./scripts/run_all_problems.sh "$DATA_ROOT" my-results
 ```
 
 ### Step 9: Run one problem
@@ -408,187 +232,51 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 | T09 | none | PanguLU direct LU | 10 |
 | T10 | none | PanguLU complex direct LU | 10 |
 
-`PCG with constant-mode projection` does not modify the final solution after
-solving. It builds a mean-zero working residual for the PCG iteration and
-uses the original RHS for the final residual check.
+## Timing
 
-The short BiCGStab or FGMRES process in T01 and T02 is part of one outer
-FGMRES-DD preconditioner application. It is not a second independent solve.
-
-## How competition time is measured
-
-Each program performs five warm-up rounds and then five measured rounds.
-
-For an iterative method, each measured round runs:
+Each program performs five warm-up rounds and five measured rounds. Iterative
+methods run:
 
 ```text
 ANALYSIS -> NUMERIC_PREPARE -> SOLVE
 ```
 
-For a direct method, each measured round runs:
+Direct methods run:
 
 ```text
 ANALYSIS -> NUMERIC_FACTORISATION -> SOLVE
 ```
 
-Timing starts immediately before the first timed `ANALYSIS`. It ends after
-the fifth timed `SOLVE` and GPU synchronization.
-
-The competition time is:
+The reported time is:
 
 ```text
 (end time - start time) / 5
 ```
 
-The time does not include:
+Input reading, buffer copies, result copies, printing, and residual
+verification are excluded. The programs print `CHECK end to end time` and
+`COMPETITION_TIME_SECONDS`.
 
-- reading matrix or RHS files;
-- creating solver, matrix, and vector objects;
-- copying the matrix from the CPU to the GPU;
-- copying the solution back to the CPU;
-- printing or residual verification.
+## Product API locations
 
-The programs print the result in two forms:
-
-- `CHECK end to end time`, in milliseconds;
-- `COMPETITION_TIME_SECONDS`, in seconds.
-
-A run passes only when the program exits normally and every required residual
-line contains `PASS`.
-
-## Where the product APIs are called
-
-The common test programs do not call vendor APIs directly:
-
-```text
-apps/
-  -> problems/problemNN/solver.c
-  -> callback helper
-  -> src/product/
-  -> PanguLU or XianzhiKrylov
-```
-
-- PanguLU direct API calls: `src/product/pangulu_direct_solver.cpp`
-- PanguLU callback bridge: `problems/pangulu_problem_helpers.h`
-- XianzhiKrylov API calls: `src/product/xianzhi_solver.c`
-- XianzhiKrylov callback bridge: `problems/xianzhi_problem_helpers.h`
-
-Each `problems/problemNN/solver.c` selects the configuration and connects the
-official solver callback to the product adapter.
+- Problem configuration: `problems/problemNN/solver.c`
+- PanguLU adapter: `src/product/pangulu_direct_solver.cpp`
+- XianzhiKrylov adapter: `src/product/xianzhi_solver.c`
+- Shared callback bridges: `problems/*_problem_helpers.h`
 
 ## Troubleshooting
 
-When a command fails, first confirm that you are in the project folder:
-
-```bash
-pwd
-ls
-```
-
-The folder must contain `scripts`.
-
-### `Permission denied`
-
-Run:
-
-```bash
-chmod +x scripts/*.sh
-```
-
-### `cmake: command not found` or `c++: command not found`
-
-Ask your cluster administrator for the module command that loads CMake and a
-C++17 compiler. After loading the module, run `cmake --version` again.
-
-### `tar: ...: Cannot open: No such file or directory`
-
-Check that the archive is in `local/downloads`:
-
-```bash
-find local/downloads -maxdepth 1 -type f -name '*.tar.gz' -print
-```
-
-If the file is not listed, copy it into that folder.
-
-### A package file cannot be found
-
-Check the product folder:
-
-```bash
-find local/packages -maxdepth 4 -type f \
-  \( -name 'pangulu.h' -o -name 'libpangulu.so' \
-     -o -name 'liblinglongamg.so' \
-     -o -name 'XianzhiKrylovAPI.h' -o -name 'libXianzhiKrylov.so' \) -print
-```
-
-If the files are under different absolute paths, create a custom path file:
-
-```bash
-cp configs/local.env.example configs/local.env
-```
-
-Open `configs/local.env` in a text editor and remove the `#` from the required
-lines. Put the real absolute paths after `=`.
-
-Example:
-
-```text
-PANGULU_ROOT=/home/alice/products/pangulu
-SC26_LINGLONGAMG_LIBRARY=/home/alice/products/linglongamg/lib/liblinglongamg.so
-XIANZHIKRYLOV_ROOT=/home/alice/products/xianzhikrylov
-```
-
-### `License failure`, `LICENSE_EXPIRED`, or an authorization error
-
-Check:
-
-- the license file is under `local/licenses`;
-- only one valid license for the product is present;
-- the license matches the GPU used by the command;
-- the license has not expired.
-
-List the installed licenses:
-
-```bash
-ls -l local/licenses
-```
-
-If the license has expired, request a new license for the same GPU.
-
-### `error while loading shared libraries`
-
-The matching product package or Hygon runtime is not available at run time.
-
-First confirm that the product package was extracted into the expected folders.
-If the runtime is loaded with modules at your site, load it before running the
-program.
-
-If the Hygon runtime is installed at a nonstandard path, set
-`SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env` to the full path of the
-matching `libamdhip64.so` or `libgalaxyhip.so`.
-
-### `Matrix file not found` or `RHS file not found`
-
-Check that `DATA_ROOT` is an absolute path and that it points to the folder
-containing `solverchallenge26_01` through `solverchallenge26_10`:
-
-```bash
-printf '%s\n' "$DATA_ROOT"
-find "$DATA_ROOT" -maxdepth 2 -type f | head -n 20
-```
-
-For T08, T09, and T10, make sure all ten files from `_b_01.dat` through
-`_b_10.dat` exist.
-
-### The GPU is not found
-
-You are probably running on a login node instead of an interactive GPU
-allocation. Exit and start an interactive GPU session with the command
-provided by your cluster.
-
-### A problem ends with `FAIL`
-
-Open its log:
+- `Permission denied`: run `chmod +x scripts/*.sh`.
+- `cmake` or `c++` is missing: load the corresponding cluster module.
+- Package archive is missing: check `local/downloads`.
+- Package file is missing: check `local/packages`.
+- Custom package paths are needed: set them in `configs/local.env`.
+- License error: keep one valid GPU-matching key in `local/licenses`.
+- Shared library error: load the vendor runtime or set
+  `SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env`.
+- Matrix or RHS is missing: check `DATA_ROOT`.
+- GPU is missing: run the command inside an interactive GPU allocation.
+- A case fails: open its log with the commands below.
 
 ```bash
 latest_run="$(ls -dt results/run_* | head -n 1)"
@@ -596,11 +284,3 @@ cat "$latest_run/run-logs/T01_q1.log"
 ```
 
 Replace `T01_q1.log` with the failed case shown in `summary.tsv`.
-
-When asking for help, send:
-
-1. the command you ran;
-2. the first error line and several lines below it;
-3. the related log file.
-
-Do not send only “it does not work”.
