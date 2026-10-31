@@ -218,7 +218,7 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 
 ## Problem and method map
 
-| Problem | Preconditioner | Method | RHS |
+| Problem | Preconditioner | Solver | RHS |
 |---|---|---|---:|
 | T01 | LinglongAMG | XianzhiKrylov FGMRES-DD; BiCGStab up to 4 steps inside each preconditioner application | 1 |
 | T02 q1 | LinglongAMG | XianzhiKrylov PCG with constant-mode projection | 1 |
