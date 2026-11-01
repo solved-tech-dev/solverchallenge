@@ -35,7 +35,7 @@ case "${problem}" in
 esac
 
 case "${problem}" in
-    01|02|03|05|06|07|08)
+    01|02|03|04|05|06|07|08)
         if [[ -z "${XIANZHIKRYLOV_ROOT:-}" ]]; then
             echo "XianzhiKrylov was not found under local/packages/xianzhikrylov" >&2
             exit 2
@@ -61,7 +61,7 @@ case "${problem}" in
 esac
 
 case "${problem}" in
-    01|02|05)
+    01|02|04|05)
         if [[ -z "${SC26_LINGLONGAMG_LIBRARY:-}" ]]; then
             echo "LinglongAMG is required at runtime for T${problem}" >&2
             exit 2
@@ -70,6 +70,11 @@ case "${problem}" in
 esac
 
 "${CMAKE_BIN:-cmake}" "${cmake_args[@]}"
-"${CMAKE_BIN:-cmake}" --build "${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}" --parallel
+target=iterative_solver
+case "${problem}" in
+    08) target=iterative_solver_multi ;;
+    09|10) target=direct_solver_multi ;;
+esac
+"${CMAKE_BIN:-cmake}" --build "${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}" --target "$target" --parallel
 
 echo "build complete: ${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}"

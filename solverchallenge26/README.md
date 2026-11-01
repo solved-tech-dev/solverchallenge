@@ -25,7 +25,7 @@ The required products are:
 
 | Problems | Packages and licenses |
 |---|---|
-| T01, T02, T05 | LinglongAMG and XianzhiKrylov |
+| T01, T02, T04, T05 | LinglongAMG and XianzhiKrylov |
 | T03, T06 | PanguLU and XianzhiKrylov |
 | T07, T08 | XianzhiKrylov |
 | T09, T10 | PanguLU |
@@ -122,7 +122,17 @@ The scripts load these package directories automatically.
 ### Step 6: Put the licenses in `local/licenses`
 
 Copy one valid license for each required product into `local/licenses`.
-Keep the downloaded file names.
+Keep the downloaded file names. Also place a copy in each package root:
+
+```bash
+cp local/licenses/pangulu-*.key local/packages/pangulu/license.key
+cp local/licenses/linglongamg-*.key local/packages/linglongamg/license.key
+cp local/licenses/xianzhikrylov-*.key local/packages/xianzhikrylov/license.key
+```
+
+Keep only the current key for each product in `local/licenses` before running
+these commands. Each key must match the allocated GPU and remain valid for
+the whole run.
 
 ```bash
 ls -l local/licenses
@@ -163,7 +173,18 @@ results/run_<timestamp>/
 └── run-logs/
 ```
 
-`PASS` means the solve and residual check succeeded. For a failed case, open
+To collect per-round time and solver statistics into tables, run:
+
+```bash
+python3 scripts/summarize_results.py "$latest_run"
+```
+
+This writes `performance.tsv` and `performance.json` in the same result
+folder. An empty field means the library did not report that measurement.
+LinglongAMG time is nested inside the outer solver time, not added to it.
+The remaining time includes XianzhiKrylov and adapter overhead.
+
+`PASS` in a run row means the solve and residual check succeeded. For a failed case, open
 its log:
 
 ```bash
@@ -172,7 +193,10 @@ cat "$latest_run/run-logs/T01_q1.log"
 
 ### Step 9: Run one problem
 
-Each problem can also be built and run independently.
+Each problem can also be built and run independently. The command prints
+its output folder under `results/TNN_qN_<timestamp>/`. Open `run.log` there
+to see the timing and residual. `answer_x.rhs`, when produced, contains the
+computed solution.
 
 #### Problems with one RHS: T03, T04, T05, T06, and T07
 
@@ -218,9 +242,15 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 
 ## Reference Environment
 
-The ten solver routes and their performance figures were tested on one
-BW1000 DCU with 16 CPU threads, using the Hygon DTK packages supplied for
-each product. Timing follows the SolverChallenge26 phase rules: it includes
+The programs target one BW1000 DCU. The checked packages use DTK26.04.
+The scripts select 4, 8, or 16 CPU threads according to the problem.
+Per-problem runtime settings are in `problems/problemNN/config/runtime*.env`.
+
+The current downloaded XianzhiKrylov26.45 package rejects T06's complex
+FGMRES with a PanguLU preconditioner. T06 needs a package that provides that
+combination. Its failed run is reported in `summary.tsv`; it is not replaced
+with a different solver. T04's optional device-input preparation requires
+the matching LinglongAMG candidate; see `problems/problem04/README.md`. Timing follows the SolverChallenge26 phase rules: it includes
 analysis, numerical preparation, and solve, while excluding input reading,
 initial data upload, object creation, result copying, and residual
 verification.
@@ -256,15 +286,30 @@ Direct methods run:
 ANALYSIS -> NUMERIC_FACTORISATION -> SOLVE
 ```
 
-The reported time is:
+The raw measured time is the mean of rounds 6 through 10. Each round has
+its own timer, so printing statistics between rounds is not included.
+`TRIAL trial=0..9` records these rounds (the first measured round is trial 5).
 
-```text
-(end time - start time) / 5
-```
+Input reading, CSR sorting, initial GPU upload, handle creation, result
+copying, and independent residual verification happen outside these timers.
+Restoring the zero initial guess is included in each solve. Repeated calls
+rebuild the preparation; they do not reuse the previous round's factorization.
+For ten RHS, one round reuses its factorization across those RHS.
 
-Input reading, buffer copies, result copies, printing, and residual
-verification are excluded. The programs print `CHECK end to end time` and
-`COMPETITION_TIME_SECONDS`.
+Some packages still perform transfers or format conversion inside their
+execute function. The raw timer includes those operations. Where the library
+reports `excluded_input_transfer_seconds` or
+`excluded_format_conversion_seconds`, subtract these measured fields from
+each round before averaging to obtain competition time. Keep the raw time
+and exclusions alongside the corrected result; do not treat the raw time
+as transfer-free.
+
+Timers are in `apps/iterative_solver.c`, `apps/iterative_solver_multi.c`, and
+`apps/direct_solver_multi.c`. Library statistics follow each `TRIAL` line.
+The final independent check uses the original A and b; single-RHS iterative
+runs use binary128 arithmetic and return failure if their required residual
+is not met. T08 checks complex absolute maximum residual for every RHS;
+T09 and T10 check relative L2 residual for every RHS.
 
 ## Product API locations
 
@@ -280,7 +325,7 @@ verification are excluded. The programs print `CHECK end to end time` and
 - Package archive is missing: check `local/downloads`.
 - Package file is missing: check `local/packages`.
 - Custom package paths are needed: set them in `configs/local.env`.
-- License error: keep one valid GPU-matching key in `local/licenses`.
+- License error: check expiry and GPU identity, then update the matching package-root `license.key`.
 - Shared library error: load the vendor runtime or set
   `SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env`.
 - Matrix or RHS is missing: check `DATA_ROOT`.

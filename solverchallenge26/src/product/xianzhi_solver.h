@@ -28,6 +28,8 @@ int sc26_xianzhi_solver_solve(struct sc26_xianzhi_solver *solver);
 
 /* Copy the final device solution to input->x/x_im, print statistics, and free
  * all product objects. This is called after the timed loop. */
+int sc26_xianzhi_solver_report(struct sc26_xianzhi_solver *solver);
+
 int sc26_xianzhi_solver_finish(struct sc26_xianzhi_solver *solver);
 
 /* Release an incomplete or already finished context. */

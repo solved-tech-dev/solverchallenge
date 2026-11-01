@@ -51,6 +51,7 @@ target_include_directories(sc26_headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 )
 target_compile_options(sc26_headers INTERFACE -Wall -Wextra)
+target_compile_definitions(sc26_headers INTERFACE SC26_PROBLEM_ID="${SC26_PROBLEM}")
 if(SC26_SOLUTION_FP128)
     if(NOT SC26_ENABLE_FLOAT128)
         message(FATAL_ERROR "SC26_SOLUTION_FP128 requires SC26_ENABLE_FLOAT128=ON")
@@ -95,6 +96,7 @@ add_library(sc26_io STATIC
     src/matrix_market/mmio.c
     src/petsc_binary_reader.c
     src/system_loader.c
+    src/csr_sort.c
 )
 target_link_libraries(sc26_io PUBLIC sc26_headers m)
 
@@ -199,4 +201,11 @@ if(SC26_BUILD_MPI)
                     "${SC26_TEST_MATRIX}" "${SC26_TEST_RHS}"
                     ${MPIEXEC_POSTFLAGS})
     endif()
+endif()
+
+if(BUILD_TESTING)
+    add_executable(test_csr_sort tests/csr_sort.c src/csr_sort.c)
+    target_link_libraries(test_csr_sort PRIVATE sc26_headers)
+    target_compile_options(test_csr_sort PRIVATE -UNDEBUG)
+    add_test(NAME csr_sort COMMAND test_csr_sort)
 endif()

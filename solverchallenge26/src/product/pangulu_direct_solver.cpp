@@ -291,8 +291,9 @@ extern "C" int sc26_pangulu_direct_solver_create(
         reordering = L2;
     if (configured_reuse == "L1")
         reuse = L1;
-    if (pangulu_create(0, &created->handle) != PANGULU_STATUS_SUCCESS)
-        return fail("pangulu_create", 1);
+    const auto create_status = pangulu_create(0, &created->handle);
+    if (create_status != PANGULU_STATUS_SUCCESS)
+        return fail("pangulu_create", static_cast<int>(create_status));
     if (pangulu_config_set(created->handle, PANGULU_REORDERING_METHOD,
                            reordering) != PANGULU_STATUS_SUCCESS ||
         pangulu_config_set(created->handle, PANGULU_REUSE_LEVEL, reuse) !=

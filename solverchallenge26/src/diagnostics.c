@@ -301,6 +301,7 @@ void check_correctness_complex(int n, int* row_ptr, int* col_idx, double* val, d
 void store_x(int n, double* x, char* filename)
 {
     FILE* p = fopen(filename, "w");
+    if (!p) { perror(filename); exit(EXIT_FAILURE); }
     fprintf(p, "%d\n", n);
     for (int i = 0; i < n; i++) fprintf(p, "%lf\n", x[i]);
     fclose(p);
@@ -310,6 +311,7 @@ void store_x(int n, double* x, char* filename)
 void store_x_complex(int n, double* x, double* x_v, char* filename)
 {
     FILE* p = fopen(filename, "w");
+    if (!p) { perror(filename); exit(EXIT_FAILURE); }
     fprintf(p, "%d\n", n);
     int i;
     for (i = 0; i < n; i++) fprintf(p, "%lf %lf\n", x[i], x_v[i]);
@@ -320,6 +322,7 @@ void store_x_complex(int n, double* x, double* x_v, char* filename)
 void store_x_complex_ld(int n, long double* x, long double* x_v, char* filename)
 {
     FILE* p = fopen(filename, "w");
+    if (!p) { perror(filename); exit(EXIT_FAILURE); }
     fprintf(p, "%d\n", n);
     int i;
     for (i = 0; i < n; i++) fprintf(p, "%.18Le %.18Le\n", x[i], x_v[i]);
@@ -848,6 +851,7 @@ void check_correctness_complex_ld_xld(int n, int* row_ptr, int* col_idx, double*
 void store_x_ld(int n, long double* x, char* filename)
 {
     FILE* p = fopen(filename, "w");
+    if (!p) { perror(filename); exit(EXIT_FAILURE); }
     fprintf(p, "%d\n", n);
     for (int i = 0; i < n; i++) fprintf(p, "%.18Le\n", x[i]);
     fclose(p);
@@ -1289,7 +1293,7 @@ static void spmv_complex_q_xq(const int n, const int *row_ptr, const int *col_id
     }
 }
 
-void check_correctness_q_xq(int n, const int *row_ptr, const int *col_idx,
+long double check_correctness_q_xq(int n, const int *row_ptr, const int *col_idx,
                             const double *val, const __float128 *x, const double *b)
 {
     __float128 *b_new = (__float128 *)malloc(sizeof(*b_new) * (size_t)n);
@@ -1300,7 +1304,7 @@ void check_correctness_q_xq(int n, const int *row_ptr, const int *col_idx,
         fprintf(stdout, "Q-Check allocation failed.\n");
         free(b_new);
         free(residual);
-        return;
+        return INFINITY;
     }
 
     spmv_q_xq(n, row_ptr, col_idx, val, x, b_new);
@@ -1324,9 +1328,10 @@ void check_correctness_q_xq(int n, const int *row_ptr, const int *col_idx,
     print_q_check("Q-Check || b - Ax || 2 / || b || 2 =  ", answer3);
     free(b_new);
     free(residual);
+    return (long double)answer3;
 }
 
-void check_correctness_complex_q_xq(int n, const int *row_ptr, const int *col_idx,
+long double check_correctness_complex_q_xq(int n, const int *row_ptr, const int *col_idx,
                                     const double *val, const double *vali,
                                     const __float128 *x, const __float128 *xi,
                                     const double *b, const double *bi)
@@ -1343,7 +1348,7 @@ void check_correctness_complex_q_xq(int n, const int *row_ptr, const int *col_id
         free(b_new_i);
         free(residual);
         free(residual_i);
-        return;
+        return INFINITY;
     }
 
     spmv_complex_q_xq(n, row_ptr, col_idx, val, vali, x, xi, b_new, b_new_i);
@@ -1372,6 +1377,7 @@ void check_correctness_complex_q_xq(int n, const int *row_ptr, const int *col_id
     free(b_new_i);
     free(residual);
     free(residual_i);
+    return (long double)answer3;
 }
 
 #endif

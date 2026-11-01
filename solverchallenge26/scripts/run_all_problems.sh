@@ -20,7 +20,7 @@ if [[ ! -d "${data_root}" ]]; then
 fi
 
 mkdir -p "${build_logs}" "${run_logs}"
-printf 'case_status\tlog\n' > "${summary}"
+printf 'case\tstatus\tlog\n' > "${summary}"
 
 record() {
     local name="$1"
@@ -51,13 +51,13 @@ run_one() {
     local rhs_files=("$@")
     local log="${run_logs}/${label}.log"
     if [[ -n "${case_name}" ]]; then
-        if SC26_CASE="${case_name}" "${script_dir}/run_problem.sh" \
+        if SC26_OUTPUT_DIR="${output_root}/solutions/${label}" SC26_CASE="${case_name}" "${script_dir}/run_problem.sh" \
             "${problem}" "${matrix}" "${rhs_files[@]}" >"${log}" 2>&1; then
             record "${label}" "PASS" "${log}"
             return 0
         fi
     else
-        if "${script_dir}/run_problem.sh" \
+        if SC26_OUTPUT_DIR="${output_root}/solutions/${label}" "${script_dir}/run_problem.sh" \
             "${problem}" "${matrix}" "${rhs_files[@]}" >"${log}" 2>&1; then
             record "${label}" "PASS" "${log}"
             return 0
@@ -68,7 +68,7 @@ run_one() {
     return 1
 }
 
-for problem in 01 02 03 05 06 07 08 09 10; do
+for problem in 01 02 03 04 05 06 07 08 09 10; do
     if ! build_one "${problem}"; then
         continue
     fi
@@ -92,7 +92,7 @@ for problem in 01 02 03 05 06 07 08 09 10; do
             run_one "T${problem}_q1" "${problem}" q1 "${matrix}" "${rhs}"
             run_one "T${problem}_q2" "${problem}" q2 "${matrix}" "${rhs}"
             ;;
-        03|05|06|07)
+        03|04|05|06|07)
             rhs="${case_dir}/solverchallenge26_${problem}_b.dat"
             if [[ ! -r "${rhs}" ]]; then
                 record "T${problem}" "INPUT_MISSING" "${case_dir}"
@@ -128,7 +128,7 @@ for problem in 01 02 03 05 06 07 08 09 10; do
     esac
 done
 
-record "T04" "SKIPPED" "deferred by project scope"
+
 printf '\nResults: %s\n' "${output_root}"
 printf 'Summary: %s\n' "${summary}"
 exit "${overall_status}"

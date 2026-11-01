@@ -82,8 +82,11 @@ int main(int argc, char** argv)
     }
     if (m != n) {
         fprintf(stdout, "Invalid matrix size.\n");
-        return 0;
+        return 1;
     }
+    /* Coordinate sorting is input preparation, before any solver timing. */
+    if (!strcmp(SC26_PROBLEM_ID, "05") && sc26_sort_csr_rows(n,row_ptr,col_idx,val,val_im))
+        return 1;
 
     x = (SC26_SolutionScalar*)calloc((size_t)n, sizeof(SC26_SolutionScalar));
     if (sys_type) x_im = (SC26_SolutionScalar*)calloc((size_t)n, sizeof(SC26_SolutionScalar));
@@ -110,39 +113,38 @@ int main(int argc, char** argv)
     /* ========================================== */
     // Step 2: Solve the linear system
     /* ========================================== */
+    time = 0.0;
     if (sys_type == 0) {
         struct MySolver mysolver;
         SC26_SOLVER_CREATE(&mysolver, &solver_input);
-        for (int i = 0; i < warmup_frequency; ++i) {
+        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            tt = GetCurrentTime();
             analyse(&mysolver, &solver_input);
             preprocess(&mysolver, &solver_input);
             iterative_solver(&mysolver, &solver_input);
+            double elapsed = GetCurrentTime() - tt;
+            if (trial >= warmup_frequency) time += elapsed;
+            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
+            SC26_SOLVER_REPORT(&mysolver);
         }
-        tt = GetCurrentTime();
-        for (int i = 0; i < test_frequency; ++i) {
-            analyse(&mysolver, &solver_input);
-            preprocess(&mysolver, &solver_input);
-            iterative_solver(&mysolver, &solver_input);
-        }
-        time = (GetCurrentTime() - tt) / (double)test_frequency;
-        SC26_SOLVER_DESTROY(&mysolver, &solver_input);
-    } else {
-        struct MySolver_complex mysolver;
-        SC26_SOLVER_CREATE(&mysolver, &solver_input);
-        for (int i = 0; i < warmup_frequency; ++i) {
-            analyse_complex(&mysolver, &solver_input);
-            preprocess_complex(&mysolver, &solver_input);
-            iterative_solver_complex(&mysolver, &solver_input);
-        }
-        tt = GetCurrentTime();
-        for (int i = 0; i < test_frequency; ++i) {
-            analyse_complex(&mysolver, &solver_input);
-            preprocess_complex(&mysolver, &solver_input);
-            iterative_solver_complex(&mysolver, &solver_input);
-        }
-        time = (GetCurrentTime() - tt) / (double)test_frequency;
         SC26_SOLVER_DESTROY(&mysolver, &solver_input);
     }
+    else {
+        struct MySolver_complex mysolver;
+        SC26_SOLVER_CREATE(&mysolver, &solver_input);
+        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            tt = GetCurrentTime();
+            analyse_complex(&mysolver, &solver_input);
+            preprocess_complex(&mysolver, &solver_input);
+            iterative_solver_complex(&mysolver, &solver_input);
+            double elapsed = GetCurrentTime() - tt;
+            if (trial >= warmup_frequency) time += elapsed;
+            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
+            SC26_SOLVER_REPORT(&mysolver);
+        }
+        SC26_SOLVER_DESTROY(&mysolver, &solver_input);
+    }
+    time /= (double)test_frequency;
 
     fprintf(stdout, "------------------------------------------\n");
 
@@ -180,6 +182,7 @@ int main(int argc, char** argv)
     else // complex rhs
         store_x_complex_ld(n, x_ld, x_im_ld, answer_x);
 
+    long double verified_residual = INFINITY;
     // check the correctness
     if (sys_type == 0) // real system
     {
@@ -193,7 +196,7 @@ int main(int argc, char** argv)
 #endif
 #ifndef SC26_DISABLE_FLOAT128
         // 3) float128 solution, float128 evaluation
-        check_correctness_q_xq(n, row_ptr, col_idx, val, x_q, b);
+        verified_residual = check_correctness_q_xq(n, row_ptr, col_idx, val, x_q, b);
 #endif
 
     } else { // complex system
@@ -207,7 +210,7 @@ int main(int argc, char** argv)
 #endif
 #ifndef SC26_DISABLE_FLOAT128
         // 3) float128 solution, float128 evaluation
-        check_correctness_complex_q_xq(n, row_ptr, col_idx, val, val_im, x_q, x_q_im, b, b_im);
+        verified_residual = check_correctness_complex_q_xq(n, row_ptr, col_idx, val, val_im, x_q, x_q_im, b, b_im);
 #endif
 
         free(val_im);
@@ -229,5 +232,14 @@ int main(int argc, char** argv)
     free(x);
     free(b);
 
-    return 0;
+    long double limit = 1e-8L;
+    const char *case_name = getenv("SC26_CASE");
+    int q2 = case_name && !strcmp(case_name,"q2");
+    if (!strcmp(SC26_PROBLEM_ID,"01")) limit=q2 ? 1e-8L : 1e-4L;
+    if (!strcmp(SC26_PROBLEM_ID,"02")) limit=q2 ? 1e-10L : 1e-6L;
+    if (!strcmp(SC26_PROBLEM_ID,"07")) limit=1e-6L;
+    int passed=isfinite(verified_residual) && verified_residual<limit;
+    printf("VERIFICATION relative_l2=%.12Le threshold=%.1Le %s\n",
+           verified_residual,limit,passed?"PASS":"FAIL");
+    return passed ? 0 : 1;
 }

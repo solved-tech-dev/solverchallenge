@@ -47,9 +47,9 @@ for candidate in "${SC26_LOCAL_ROOT}"/licenses/pangulu*.key; do
 done
 
 for library_dir in \
-    "${SC26_LOCAL_ROOT}/packages/xianzhikrylov/lib" \
+    "${XIANZHIKRYLOV_ROOT:-${SC26_LOCAL_ROOT}/packages/xianzhikrylov}/lib" \
     "${SC26_LOCAL_ROOT}/packages/linglongamg/lib" \
-    "${SC26_LOCAL_ROOT}/packages/pangulu/lib"; do
+    "${PANGULU_ROOT:-${SC26_LOCAL_ROOT}/packages/pangulu}/lib"; do
     if [[ -d "${library_dir}" &&
           ":${LD_LIBRARY_PATH:-}:" != *":${library_dir}:"* ]]; then
         export LD_LIBRARY_PATH="${library_dir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"

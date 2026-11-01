@@ -32,7 +32,8 @@ static void sc26_problem_config_path(
     exit(EXIT_FAILURE);
 #else
     int written = snprintf(
-        output, output_size, "%s/%s", SC26_PROBLEM_CONFIG_DIR, file_name);
+        output, output_size, "%s/%s",
+        getenv("SC26_CONFIG_DIR") ? getenv("SC26_CONFIG_DIR") : SC26_PROBLEM_CONFIG_DIR, file_name);
     if (written < 0 || (size_t)written >= output_size) {
         fprintf(stderr, "problem configuration path is too long\n");
         exit(EXIT_FAILURE);
@@ -162,6 +163,11 @@ static void sc26_problem_create_xianzhi(
             sc26_xianzhi_solver_solve(sc26_xianzhi_state(solver)),           \
             "complex solve");                                                \
     }
+
+void sc26_problem_report(void *solver)
+{
+    sc26_xianzhi_require(sc26_xianzhi_solver_report(sc26_xianzhi_state(solver)), "statistics");
+}
 
 #define SC26_DEFINE_XIANZHI_DESTROY()                                       \
     void sc26_problem_destroy(void *solver,                                 \

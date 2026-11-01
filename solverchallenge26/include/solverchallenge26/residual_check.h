@@ -41,10 +41,10 @@ void check_correctness_complex_q_ldx(int n, const int *row_ptr,
                                      const double *val_im, const long double *x,
                                      const long double *x_im, const double *b,
                                      const double *b_im);
-void check_correctness_q_xq(int n, const int *row_ptr, const int *col_idx,
+long double check_correctness_q_xq(int n, const int *row_ptr, const int *col_idx,
                             const double *val, const __float128 *x,
                             const double *b);
-void check_correctness_complex_q_xq(int n, const int *row_ptr,
+long double check_correctness_complex_q_xq(int n, const int *row_ptr,
                                     const int *col_idx, const double *val,
                                     const double *val_im, const __float128 *x,
                                     const __float128 *x_im, const double *b,

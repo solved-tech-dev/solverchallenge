@@ -1,0 +1,12 @@
+{
+  "extended_solver": {
+    "method": "pcg_amg",
+    "provider": "linglongamg",
+    "library_path": "@LINGLONGAMG_LIBRARY@",
+    "config_path": "@LINGLONGAMG_CONFIG@",
+    "max_iterations": 400,
+    "relative_tolerance": 1e-08,
+    "host_matrix_setup": true,
+    "pcg_row_width": 16
+  }
+}

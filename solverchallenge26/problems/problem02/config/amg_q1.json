@@ -6,8 +6,8 @@
     "strong_threshold": 0.3,
     "presweeps": 1,
     "postsweeps": 1,
-    "coarsest_sweeps": 1,
-    "jacobi_omega": 1.0,
+    "coarsest_sweeps": 4,
+    "jacobi_omega": 0.875,
     "interp_max_elements": 3,
     "rap_method": "onestep",
     "coarsening_method": "pmis",
@@ -26,7 +26,6 @@
     "coarse_solver": "smooth_only",
     "coarse_solver_method": "smooth_only",
     "scaling": "none",
-    "print_level": 0,
-    "mixed_precision": "fp32_vcycle"
+    "print_level": 0
   }
 }

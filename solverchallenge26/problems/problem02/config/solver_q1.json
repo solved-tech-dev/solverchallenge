@@ -2,14 +2,13 @@
   "extended_solver": {
     "method": "projected_pcg",
     "provider": "linglongamg",
-    "integration": "dynamic",
     "library_path": "@LINGLONGAMG_LIBRARY@",
     "config_path": "@LINGLONGAMG_CONFIG@",
     "max_iterations": 120,
-    "relative_tolerance": 8e-7,
+    "relative_tolerance": 8e-07,
     "inner_method": "none",
-    "pcg_blocks": 1024,
+    "pcg_blocks": 256,
     "pcg_row_width": 1,
-    "pcg_ell5": false
+    "pcg_ell5": true
   }
 }

@@ -4,6 +4,12 @@
 /* User solver API public entry point. */
 #include "solver.h"
 
+#ifndef SC26_SOLVER_REPORT
+#define SC26_SOLVER_REPORT(solver) ((void)0)
+#endif
+
+
+
 #ifndef SC26_SOLVER_CREATE
 #define SC26_SOLVER_CREATE(solver, input) ((void)0)
 #endif

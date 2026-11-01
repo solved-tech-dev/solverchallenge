@@ -21,16 +21,12 @@
     "smoother": "jacobi",
     "convergence": "rel_ini",
     "norm": "l2",
-    "spmv_backend": "cusparse",
+    "spmv_backend": "manual",
     "mixed_precision": "fp32_vcycle",
     "vector_backend": "manual",
     "coarse_solver": "smooth_only",
     "coarse_solver_method": "smooth_only",
     "scaling": "none",
     "print_level": 0
-  },
-  "execution": {
-    "one_cycle": 1,
-    "zero_start_apply": 1
   }
 }

@@ -3,8 +3,12 @@
     "method": "bicgstab_hybrid30",
     "provider": "block_jacobi3",
     "max_iterations": 1000,
-    "relative_tolerance": 1e-7,
-    "grid": 4096,
-    "check_interval": 8
+    "relative_tolerance": 1e-07,
+    "grid": 32768,
+    "check_interval": 8,
+    "cache_rank": 2,
+    "tile_coeffs": true,
+    "reduction_blocks": 256,
+    "spmv_threads": 128
   }
 }

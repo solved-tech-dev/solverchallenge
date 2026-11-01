@@ -13,7 +13,7 @@ int main(int argc, char** argv)
     double tolerance;
     int is_complex;
     double start = 0.0;
-    double seconds;
+    double seconds = 0.0;
     int pass;
     if (argc < 5) {
         fprintf(
@@ -34,23 +34,27 @@ int main(int argc, char** argv)
         struct MySolver_complex solver;
         SC26_SOLVER_CREATE(&solver, &input);
         for (int trial = 0; trial < 10; ++trial) {
-            if (trial == 5) start = sc26_multi_seconds();
+            start = sc26_multi_seconds();
             preprocess_complex(&solver, &input);
             direct_solver_complex(&solver, &input);
             solve_complex(&solver, &input);
+            double elapsed = sc26_multi_seconds() - start;
+            if (trial >= 5) seconds += elapsed;
+            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
         }
-        seconds = sc26_multi_seconds() - start;
         SC26_SOLVER_DESTROY(&solver, &input);
     } else {
         struct MySolver solver;
         SC26_SOLVER_CREATE(&solver, &input);
         for (int trial = 0; trial < 10; ++trial) {
-            if (trial == 5) start = sc26_multi_seconds();
+            start = sc26_multi_seconds();
             preprocess(&solver, &input);
             direct_solver(&solver, &input);
             solve(&solver, &input);
+            double elapsed = sc26_multi_seconds() - start;
+            if (trial >= 5) seconds += elapsed;
+            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
         }
-        seconds = sc26_multi_seconds() - start;
         SC26_SOLVER_DESTROY(&solver, &input);
     }
     pass = sc26_multi_verify(&system, residual_mode, tolerance);

@@ -4,6 +4,7 @@
     "batch": 10,
     "restart": 15,
     "drop": 0.08,
-    "tolerance": 1e-8
+    "tolerance": 1e-08,
+    "project_group": 4
   }
 }

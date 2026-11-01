@@ -449,6 +449,13 @@ int sc26_xianzhi_solver_create(
     matrix_data.column_indices.bytes = column_bytes;
     matrix_data.values.data = created->device_values;
     matrix_data.values.bytes = checked_bytes(value_count, sizeof(double));
+    if (getenv("SC26_HOST_MATRIX") && atoi(getenv("SC26_HOST_MATRIX")) == 1) {
+        if (created->components != 1) { status = SC26_XK_ERR_ARGUMENT; goto fail; }
+        matrix_data.memory_space = XIANZHIKRYLOV_HOST;
+        matrix_data.row_offsets.data = (void *)input->row_ptr;
+        matrix_data.column_indices.data = (void *)input->col_idx;
+        matrix_data.values.data = (void *)input->val;
+    }
     status = product_status(
         "xianzhikrylov_create", xianzhikrylov_create(0, &created->handle));
     if (!status)
@@ -515,8 +522,10 @@ int sc26_xianzhi_solver_solve(struct sc26_xianzhi_solver *solver)
     int status;
     if (!solver) return SC26_XK_ERR_ARGUMENT;
     scalar_count = (uint64_t)solver->n * (uint64_t)solver->rhs_count;
-    bytes = checked_bytes(scalar_count, sizeof(double));
+    bytes = checked_bytes(scalar_count * (uint64_t)solver->components, sizeof(double));
+    if (bytes == UINT64_MAX) return SC26_XK_ERR_MEMORY;
     if ((status = device_zero(solver->device_solution, bytes))) return status;
+    bytes = checked_bytes(scalar_count, sizeof(double));
     if (solver->dd_solution &&
         (status = device_zero(solver->device_solution_low, bytes)))
         return status;
@@ -601,6 +610,12 @@ static int copy_solution_to_host(struct sc26_xianzhi_solver *solver)
     free(low);
     free(high);
     return status;
+}
+
+int sc26_xianzhi_solver_report(struct sc26_xianzhi_solver *solver)
+{
+    if (!solver || !solver->handle) return SC26_XK_ERR_ARGUMENT;
+    return product_status("xianzhikrylov_print_info", xianzhikrylov_print_info(solver->handle));
 }
 
 int sc26_xianzhi_solver_finish(struct sc26_xianzhi_solver *solver)
