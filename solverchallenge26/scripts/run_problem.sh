@@ -41,4 +41,13 @@ output="${SC26_OUTPUT_DIR:-${SC26_REPO_ROOT}/results/T${problem}_${SC26_CASE}_$(
 mkdir -p "$output"; output="$(realpath -- "$output")"
 echo "Output: $output"
 cd "$output"
-"$executable" "${args[@]}" 2>&1 | tee run.log
+runner=()
+if [[ -n ${SC26_COMPAT_ROOT:-} ]]; then
+    compat="$(realpath -e -- "$SC26_COMPAT_ROOT")"
+    [[ -x "$compat/ld-linux-x86-64.so.2" ]] || {
+        echo "Compatibility loader missing: $compat/ld-linux-x86-64.so.2" >&2; exit 2;
+    }
+    # Limit the alternate C runtime to this solver process, not shell utilities.
+    runner=("$compat/ld-linux-x86-64.so.2" --library-path "${LD_LIBRARY_PATH:-}:$compat")
+fi
+"${runner[@]}" "$executable" "${args[@]}" 2>&1 | tee run.log

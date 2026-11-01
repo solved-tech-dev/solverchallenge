@@ -80,7 +80,25 @@ c++ --version
 ```
 
 If a command is missing, load the corresponding environment module before
-continuing.
+continuing. On the tested BW1000 cluster, the runtime is loaded with:
+
+```bash
+module load compiler/dtk/26.04
+```
+
+Check the system C library version with `ldd --version` and compare it with
+the package README. The tested XianzhiKrylov and LinglongAMG builds require
+glibc2.35. On an older system, use a compatible package or a compatibility
+runtime supplied by your administrator. For the latter, add this to
+`configs/local.env`:
+
+```bash
+export SC26_COMPAT_ROOT="/absolute/path/to/site/compat-runtime"
+```
+
+The directory must contain `ld-linux-x86-64.so.2` and its matching libraries.
+The script applies it only to the solver. Do not add that directory to the
+shell's `LD_LIBRARY_PATH`.
 
 ### Step 3: Create the local folders
 
