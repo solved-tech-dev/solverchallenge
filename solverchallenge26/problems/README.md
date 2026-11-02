@@ -8,23 +8,19 @@ reused from `src/`.
 
 The populated slots in this repository are:
 
-| Slot | Callback type | Preconditioner | Outer method | Inner short Krylov |
-|---|---|---|---|---|
-| problem01 | iterative | LinglongAMG | XianzhiKrylov FGMRES-DD | BiCGStab, max 4 steps |
-| problem02 q1 | iterative | LinglongAMG | XianzhiKrylov Projected PCG | none |
-| problem02 q2 | iterative | LinglongAMG | XianzhiKrylov FGMRES-DD | FGMRES, max 4 steps |
-| problem03 | iterative | PanguLU | XianzhiKrylov FGMRES-DD | none |
-| problem04 | iterative | LinglongAMG | XianzhiKrylov PCG | none |
-| problem05 | iterative | LinglongAMG | XianzhiKrylov FGMRES | none |
-| problem06 | iterative | PanguLU | XianzhiKrylov complex FGMRES | none |
-| problem07 | iterative | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov BiCGStab | none |
-| problem08 | iterative | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | none |
-| problem09 | direct | none | PanguLU direct LU | none |
-| problem10 | direct | none | PanguLU complex direct LU | none |
-
-`inner_method` is a short Krylov process used inside each preconditioner
-application of the outer `fgmres_dd`. It does not perform the final
-convergence check. The suffix `4` means a maximum of four inner iterations.
+| Slot | Type | Preconditioner | Solver |
+|---|---|---|---|
+| problem01 | iterative | LinglongAMG | XianzhiKrylov FGMRES |
+| problem02 q1 | iterative | LinglongAMG | XianzhiKrylov PCG |
+| problem02 q2 | iterative | LinglongAMG | XianzhiKrylov FGMRES |
+| problem03 | iterative | PanguLU | XianzhiKrylov FGMRES |
+| problem04 | iterative | LinglongAMG | XianzhiKrylov PCG |
+| problem05 | iterative | LinglongAMG | XianzhiKrylov FGMRES |
+| problem06 | iterative | PanguLU | XianzhiKrylov complex FGMRES |
+| problem07 | iterative | XianzhiKrylov block Jacobi | XianzhiKrylov BiCGStab |
+| problem08 | iterative | XianzhiKrylov ILU(0) | XianzhiKrylov complex FGMRES |
+| problem09 | direct | none | PanguLU direct LU |
+| problem10 | direct | none | PanguLU complex direct LU |
 
 Problems 09 and 10 use `src/product/pangulu_direct_solver.cpp`. The
 XianzhiKrylov problems use the common adapter in

@@ -278,8 +278,8 @@ int main(int argc, char** argv)
         // check the memory
         // mem_usage();
 
-        // check time
-        fprintf(stdout, "CHECK end to end time :         %12.6lf ms\n", time);
+        // Print the average measured solve time.
+        fprintf(stdout, "time_ms=%.6lf\n", time);
 
         // store x to a file
         // promote the solution to long double for output and high-precision checks

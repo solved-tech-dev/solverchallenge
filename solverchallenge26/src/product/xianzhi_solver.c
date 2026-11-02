@@ -12,6 +12,13 @@
 #include <string.h>
 #include <unistd.h>
 
+
+/*
+ * This adapter connects the SolverChallenge input buffers to the public
+ * XianzhiKrylov C API.  It uploads the matrix and RHS once, keeps the product
+ * objects alive for the repeated rounds, and copies the solution back only
+ * after the final round.
+ */
 enum {
     SC26_XK_OK = 0,
     SC26_XK_ERR_ARGUMENT = -100,
@@ -22,6 +29,8 @@ enum {
     SC26_XK_ERR_UNSUPPORTED = -105
 };
 
+
+/* Minimal HIP runtime used by the adapter; resolved dynamically below. */
 struct sc26_hip_runtime {
     void *library;
     int ready;
@@ -35,6 +44,8 @@ struct sc26_hip_runtime {
 
 static struct sc26_hip_runtime hip_runtime;
 
+
+/* Complete state needed by one XianzhiKrylov solve context. */
 struct sc26_xianzhi_solver {
     const struct SC26_SolverInput *input;
     xianzhikrylov_handle_t handle;
@@ -56,17 +67,24 @@ struct sc26_xianzhi_solver {
     char config_path[4096];
 };
 
+
+/* Return the byte count, or UINT64_MAX when the multiplication overflows. */
 static uint64_t checked_bytes(uint64_t count, size_t width)
 {
-    if (width != 0 && count > UINT64_MAX / (uint64_t)width)
+    if (width != 0 && count > UINT64_MAX / (uint64_t)width) {
         return UINT64_MAX;
+    }
     return count * (uint64_t)width;
 }
 
+
+/* Load the vendor runtime and resolve the few HIP entry points we use. */
 static int load_hip_runtime(void)
 {
     const char *configured;
-    if (hip_runtime.ready) return SC26_XK_OK;
+    if (hip_runtime.ready) {
+        return SC26_XK_OK;
+    }
     configured = getenv("SC26_HIP_RUNTIME_LIBRARY");
     if (configured && *configured)
         hip_runtime.library = dlopen(configured, RTLD_NOW | RTLD_LOCAL);
@@ -96,21 +114,31 @@ static int load_hip_runtime(void)
     SC26_LOAD_HIP(set_device_fn, "SetDevice");
     SC26_LOAD_HIP(synchronize_fn, "DeviceSynchronize");
 #undef SC26_LOAD_HIP
-    if (hip_runtime.set_device_fn(0) != 0) return SC26_XK_ERR_RUNTIME;
+    if (hip_runtime.set_device_fn(0) != 0) {
+        return SC26_XK_ERR_RUNTIME;
+    }
     hip_runtime.ready = 1;
     return SC26_XK_OK;
 }
 
+
+/* Allocate device memory through the selected vendor runtime. */
 static int device_alloc(void **pointer, uint64_t bytes)
 {
     void *value = NULL;
-    if (!pointer || bytes > (uint64_t)SIZE_MAX) return SC26_XK_ERR_ARGUMENT;
-    if (hip_runtime.malloc_fn(&value, (size_t)bytes) != 0 || !value)
+
+    if (!pointer || bytes > (uint64_t)SIZE_MAX) {
+        return SC26_XK_ERR_ARGUMENT;
+    }
+    if (hip_runtime.malloc_fn(&value, (size_t)bytes) != 0 || !value) {
         return SC26_XK_ERR_MEMORY;
+    }
     *pointer = value;
     return SC26_XK_OK;
 }
 
+
+/* Release a device allocation and clear the caller's pointer. */
 static void device_free(void **pointer)
 {
     if (pointer && *pointer) {
@@ -119,6 +147,8 @@ static void device_free(void **pointer)
     }
 }
 
+
+/* Host-to-device copy wrapper. */
 static int device_copy_to(void *destination, const void *source, uint64_t bytes)
 {
     return hip_runtime.memcpy_fn(destination, source, (size_t)bytes, 1) == 0
@@ -126,6 +156,8 @@ static int device_copy_to(void *destination, const void *source, uint64_t bytes)
                : SC26_XK_ERR_RUNTIME;
 }
 
+
+/* Device-to-host copy wrapper. */
 static int device_copy_from(void *destination, const void *source, uint64_t bytes)
 {
     return hip_runtime.memcpy_fn(destination, source, (size_t)bytes, 2) == 0
@@ -133,6 +165,8 @@ static int device_copy_from(void *destination, const void *source, uint64_t byte
                : SC26_XK_ERR_RUNTIME;
 }
 
+
+/* Clear a device buffer before a new solve. */
 static int device_zero(void *destination, uint64_t bytes)
 {
     return hip_runtime.memset_fn(destination, 0, (size_t)bytes) == 0
@@ -140,14 +174,20 @@ static int device_zero(void *destination, uint64_t bytes)
                : SC26_XK_ERR_RUNTIME;
 }
 
+
+/* Read a JSON template into a temporary in-memory string. */
 static char *read_text_file(const char *path)
 {
     FILE *file;
     long length;
     char *text;
-    if (!path) return NULL;
+    if (!path) {
+        return NULL;
+    }
     file = fopen(path, "rb");
-    if (!file) return NULL;
+    if (!file) {
+        return NULL;
+    }
     if (fseek(file, 0, SEEK_END) != 0) {
         fclose(file);
         return NULL;
@@ -172,6 +212,8 @@ static char *read_text_file(const char *path)
     return text;
 }
 
+
+/* Replace one @TOKEN@ value in a JSON template. */
 static int replace_all(char **text, const char *token, const char *value)
 {
     size_t token_length;
@@ -227,6 +269,11 @@ static int replace_all(char **text, const char *token, const char *value)
     return SC26_XK_OK;
 }
 
+
+/*
+ * Write a private JSON configuration for the product.  The temporary file is
+ * removed when the solve context is destroyed.
+ */
 static int materialize_config(
     char *output,
     size_t output_size,
@@ -276,6 +323,11 @@ static int materialize_config(
     return SC26_XK_OK;
 }
 
+
+/*
+ * Complex values are interleaved in the public API, while the test program
+ * stores real and imaginary arrays separately.
+ */
 static int upload_matrix_values(struct sc26_xianzhi_solver *solver)
 {
     const size_t chunk_values = (size_t)1 << 20;
@@ -305,6 +357,8 @@ static int upload_matrix_values(struct sc26_xianzhi_solver *solver)
     return status;
 }
 
+
+/* Upload one or more right-hand sides, converting complex values if needed. */
 static int upload_rhs(struct sc26_xianzhi_solver *solver)
 {
     const size_t chunk_values = (size_t)1 << 20;
@@ -339,6 +393,8 @@ static int upload_rhs(struct sc26_xianzhi_solver *solver)
     return status;
 }
 
+
+/* Convert a product status into the small adapter status range. */
 static int product_status(const char *operation, xianzhikrylov_status_t status)
 {
     if (status == XIANZHIKRYLOV_SUCCESS || status == XIANZHIKRYLOV_CONVERGED)
@@ -347,6 +403,8 @@ static int product_status(const char *operation, xianzhikrylov_status_t status)
     return SC26_XK_ERR_PRODUCT;
 }
 
+
+/* Create all product objects and upload the matrix, RHS, and zero solution. */
 int sc26_xianzhi_solver_create(
     struct sc26_xianzhi_solver **solver,
     const struct SC26_SolverInput *input,
@@ -362,8 +420,9 @@ int sc26_xianzhi_solver_create(
     uint64_t vector_count;
     uint64_t vector_bytes;
     int status;
-    if (!solver || !input || !options || !options->config_template)
+    if (!solver || !input || !options || !options->config_template) {
         return SC26_XK_ERR_ARGUMENT;
+    }
     *solver = NULL;
     if (!input->row_ptr || !input->col_idx || !input->val || !input->x ||
         input->global_n <= 0 || input->global_n != input->local_n ||
@@ -375,9 +434,13 @@ int sc26_xianzhi_solver_create(
     } else if (options->dd_solution && !input->x_all) {
         return SC26_XK_ERR_UNSUPPORTED;
     }
-    if (load_hip_runtime()) return SC26_XK_ERR_RUNTIME;
+    if (load_hip_runtime()) {
+        return SC26_XK_ERR_RUNTIME;
+    }
     created = (struct sc26_xianzhi_solver *)calloc(1, sizeof(*created));
-    if (!created) return SC26_XK_ERR_MEMORY;
+    if (!created) {
+        return SC26_XK_ERR_MEMORY;
+    }
     created->input = input;
     created->n = input->global_n;
     created->nnz = input->row_ptr[input->global_n];
@@ -495,6 +558,8 @@ fail:
     return status;
 }
 
+
+/* Run only structural analysis.  No numeric factorization is started here. */
 int sc26_xianzhi_solver_analysis(struct sc26_xianzhi_solver *solver)
 {
     if (!solver) return SC26_XK_ERR_ARGUMENT;
@@ -505,6 +570,8 @@ int sc26_xianzhi_solver_analysis(struct sc26_xianzhi_solver *solver)
             solver->matrix, NULL, NULL));
 }
 
+
+/* Build numeric preconditioner or factorization data for this round. */
 int sc26_xianzhi_solver_numeric_prepare(struct sc26_xianzhi_solver *solver)
 {
     if (!solver) return SC26_XK_ERR_ARGUMENT;
@@ -515,6 +582,11 @@ int sc26_xianzhi_solver_numeric_prepare(struct sc26_xianzhi_solver *solver)
             solver->matrix, NULL, NULL));
 }
 
+
+/*
+ * Reset the product solution to zero and run the solve phase.  The operation
+ * is synchronous so the caller can time each round accurately.
+ */
 int sc26_xianzhi_solver_solve(struct sc26_xianzhi_solver *solver)
 {
     uint64_t scalar_count;
@@ -539,6 +611,8 @@ int sc26_xianzhi_solver_solve(struct sc26_xianzhi_solver *solver)
     return status;
 }
 
+
+/* Copy the final device solution to the host after the measured rounds. */
 static int copy_solution_to_host(struct sc26_xianzhi_solver *solver)
 {
     const size_t chunk_values = (size_t)1 << 20;
@@ -618,6 +692,8 @@ int sc26_xianzhi_solver_report(struct sc26_xianzhi_solver *solver)
     return product_status("xianzhikrylov_print_info", xianzhikrylov_print_info(solver->handle));
 }
 
+
+/* Print product statistics and copy the solution without timing either step. */
 int sc26_xianzhi_solver_finish(struct sc26_xianzhi_solver *solver)
 {
     int status;
@@ -630,6 +706,8 @@ int sc26_xianzhi_solver_finish(struct sc26_xianzhi_solver *solver)
     return status;
 }
 
+
+/* Free product objects, device buffers, and the temporary configuration. */
 void sc26_xianzhi_solver_destroy(struct sc26_xianzhi_solver *solver)
 {
     if (!solver) return;

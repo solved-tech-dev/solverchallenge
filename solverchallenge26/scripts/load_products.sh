@@ -5,11 +5,13 @@ SC26_REPO_ROOT="$(
 )"
 SC26_LOCAL_ROOT="${SC26_LOCAL_ROOT:-${SC26_REPO_ROOT}/local}"
 
+# User-provided paths take priority.  The example file is optional.
 if [[ -f "${SC26_REPO_ROOT}/configs/local.env" ]]; then
     # shellcheck disable=SC1091
     source "${SC26_REPO_ROOT}/configs/local.env"
 fi
 
+# Locate product packages extracted under the standard local/ layout.
 if [[ -z "${XIANZHIKRYLOV_ROOT:-}" &&
       -d "${SC26_LOCAL_ROOT}/packages/xianzhikrylov" ]]; then
     export XIANZHIKRYLOV_ROOT="${SC26_LOCAL_ROOT}/packages/xianzhikrylov"
@@ -27,6 +29,7 @@ if [[ -z "${SC26_PANGULU_LIBRARY:-}" &&
     export SC26_PANGULU_LIBRARY="${SC26_LOCAL_ROOT}/packages/pangulu/lib/libpangulu.so"
 fi
 
+# Use the first matching license unless the caller already set a path.
 for candidate in "${SC26_LOCAL_ROOT}"/licenses/xianzhikrylov*.key; do
     if [[ -z "${XIANZHIKRYLOV_LICENSE_PATHS:-}" && -f "${candidate}" ]]; then
         export XIANZHIKRYLOV_LICENSE_PATHS="${candidate}"
@@ -46,6 +49,7 @@ for candidate in "${SC26_LOCAL_ROOT}"/licenses/pangulu*.key; do
     fi
 done
 
+# Make product libraries visible to the generated test programs.
 for library_dir in \
     "${XIANZHIKRYLOV_ROOT:-${SC26_LOCAL_ROOT}/packages/xianzhikrylov}/lib" \
     "${SC26_LOCAL_ROOT}/packages/linglongamg/lib" \

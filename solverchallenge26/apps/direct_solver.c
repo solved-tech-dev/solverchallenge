@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     double* val_im  = NULL;         // the csr value array of matrix A (imaginary number)
     SC26_SolutionScalar *x = NULL, *x_im = NULL; // solution vector x, (x: real number, x_im: imaginary number)
     double *b = NULL, *b_im = NULL; // right-hand side vector b, (b: real number, b_im: imaginary number)
-    double  tt, time;
+    double  tt;
 
     char* filename_matrix;       // the filename of matrix A
     char* filename_b;            // the filename of right-hand side vector b
@@ -117,45 +117,40 @@ int main(int argc, char** argv)
     if (sys_type == 0) {
         struct MySolver mysolver;
         SC26_SOLVER_CREATE(&mysolver, &solver_input);
-        for (int i = 0; i < warmup_frequency; ++i) {
+        /*
+         * The first five rounds warm up the product and the last five rounds
+         * are measured.  Each measured round has its own timer.
+         */
+        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            tt = GetCurrentTime();
             preprocess(&mysolver, &solver_input);
             direct_solver(&mysolver, &solver_input);
             solve(&mysolver, &solver_input);
+            double elapsed = GetCurrentTime() - tt;
+            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
+            SC26_SOLVER_REPORT(&mysolver);
         }
-        tt = GetCurrentTime();
-        for (int i = 0; i < test_frequency; ++i) {
-            preprocess(&mysolver, &solver_input);
-            direct_solver(&mysolver, &solver_input);
-            solve(&mysolver, &solver_input);
-        }
-        time = (GetCurrentTime() - tt) / (double)test_frequency;
         SC26_SOLVER_DESTROY(&mysolver, &solver_input);
     } else {
         struct MySolver_complex mysolver;
         SC26_SOLVER_CREATE(&mysolver, &solver_input);
-        for (int i = 0; i < warmup_frequency; ++i) {
+        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            tt = GetCurrentTime();
             preprocess_complex(&mysolver, &solver_input);
             direct_solver_complex(&mysolver, &solver_input);
             solve_complex(&mysolver, &solver_input);
+            double elapsed = GetCurrentTime() - tt;
+            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
+            SC26_SOLVER_REPORT(&mysolver);
         }
-        tt = GetCurrentTime();
-        for (int i = 0; i < test_frequency; ++i) {
-            preprocess_complex(&mysolver, &solver_input);
-            direct_solver_complex(&mysolver, &solver_input);
-            solve_complex(&mysolver, &solver_input);
-        }
-        time = (GetCurrentTime() - tt) / (double)test_frequency;
         SC26_SOLVER_DESTROY(&mysolver, &solver_input);
     }
 
     fprintf(stdout, "------------------------------------------\n");
 
     /* ========================================== */
-    // Step 3: Check time, memory and correctness
+    // Step 3: Check memory and correctness
     /* ========================================== */
-    // check time
-    fprintf(stdout, "CHECK end to end time :         %12.6lf ms\n", time);
-
     // check the memory
     mem_usage();
 

@@ -1,83 +1,220 @@
 #!/usr/bin/env python3
-"""Summarize per-round timing and verification without inferring missing data."""
+"""Create a concise performance table from SolverChallenge26 logs."""
+
+import argparse
 import csv
 import json
+import os
 from pathlib import Path
 import re
 import statistics
 import sys
 
-NUMBER = r'([0-9.eE+\-]+)'
 
-def summarize(path):
-    text = path.read_text(errors='replace')
-    result = {'case': path.stem, 'log': str(path.resolve()), 'status': 'incomplete'}
+NUMBER = r"([0-9.eE+\-]+)"
+WARMUP_ROUNDS = 5
+MEASURED_ROUNDS = 5
+LAST_TRIAL = WARMUP_ROUNDS + MEASURED_ROUNDS - 1
+INPUT_UPLOAD_GAP_SECONDS = 0.05
+
+OUTPUT_FIELDS = (
+    "case",
+    "status",
+    "time_ms",
+    "iterations",
+    "max_relative_l2",
+    "max_absolute_max",
+)
+
+
+def compact_iterations(values):
+    """Return one integer when all measured rounds used the same count."""
+    if not values:
+        return None
+    if len(set(values)) == 1:
+        return values[0]
+    return ",".join(str(value) for value in values)
+
+
+def summarize_log(path):
+    """Read one solver log and return one user-facing result row."""
+    text = path.read_text(errors="replace")
+    case_name = path.stem
+    if case_name == "run":
+        case_name = os.environ.get("SC26_RESULT_CASE", path.parent.name)
+    result = {
+        "case": case_name,
+        "status": "INCOMPLETE",
+    }
     rounds = []
-    matches = list(re.finditer(r'TRIAL trial=(\d+) raw_seconds=' + NUMBER, text))
-    for i, match in enumerate(matches):
-        tail = text[match.end():matches[i+1].start() if i+1 < len(matches) else len(text)]
-        row = {'trial': int(match[1]), 'raw_seconds': float(match[2])}
-        for key in ('analysis_seconds', 'numeric_prepare_seconds', 'solve_seconds',
-                    'excluded_input_transfer_seconds', 'excluded_format_conversion_seconds',
-                    'amg_setup_seconds', 'amg_apply_seconds', 'amg_commit_seconds'):
-            found = re.search(r'\b' + key + '=' + NUMBER, tail)
+    trial_pattern = r"TRIAL trial=(\d+) raw_seconds=" + NUMBER
+    matches = list(re.finditer(trial_pattern, text))
+
+    for index, match in enumerate(matches):
+        tail_end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        tail = text[match.end():tail_end]
+        row = {
+            "trial": int(match[1]),
+            "raw_seconds": float(match[2]),
+        }
+
+        for key in (
+            "prepare_solve_seconds",
+            "excluded_input_transfer_seconds",
+            "excluded_format_conversion_seconds",
+        ):
+            found = re.search(r"\b" + key + "=" + NUMBER, tail)
             if found:
                 row[key] = float(found[1])
-        found = re.search(r'XianzhiKrylov status=\d+ converged=\d+ iterations=(\d+)', tail)
+
+        found = re.search(
+            r"XianzhiKrylov status=\d+ converged=\d+ iterations=(\d+)",
+            tail,
+        )
         if found:
-            row['iterations'] = int(found[1])
-        row['excluded_seconds'] = sum(row.get(k, 0) for k in
-            ('excluded_input_transfer_seconds', 'excluded_format_conversion_seconds'))
-        row['competition_seconds'] = row['raw_seconds'] - row['excluded_seconds']
+            row["iterations"] = int(found[1])
+
+        prepare_seconds = row.get("prepare_solve_seconds")
+        has_external_upload = (
+            prepare_seconds is not None
+            and row["raw_seconds"] - prepare_seconds > INPUT_UPLOAD_GAP_SECONDS
+        )
+        if has_external_upload:
+            base_seconds = prepare_seconds
+            input_transfer = 0.0
+        else:
+            base_seconds = row["raw_seconds"]
+            input_transfer = row.get("excluded_input_transfer_seconds", 0.0)
+
+        format_conversion = row.get("excluded_format_conversion_seconds", 0.0)
+        row["time_seconds"] = base_seconds - input_transfer - format_conversion
         rounds.append(row)
-    measured = [row for row in rounds if 5 <= row['trial'] <= 9]
-    if len(measured) == 5:
-        result['measured_rounds'] = measured
-        for key in ('raw_seconds', 'excluded_seconds', 'competition_seconds',
-                    'analysis_seconds', 'numeric_prepare_seconds', 'solve_seconds'):
-            if all(key in row for row in measured):
-                result[key] = statistics.mean(row[key] for row in measured)
-        if all('iterations' in row for row in measured):
-            result['iterations'] = [row['iterations'] for row in measured]
-        if all(all(k in row for k in ('amg_setup_seconds','amg_apply_seconds','amg_commit_seconds'))
-               for row in measured):
-            result['linglong_seconds'] = statistics.mean(
-                row['amg_setup_seconds'] + row['amg_apply_seconds'] + row['amg_commit_seconds']
-                - row.get('excluded_input_transfer_seconds', 0) for row in measured)
-            result['xianzhi_and_adapter_seconds'] = result['competition_seconds'] - result['linglong_seconds']
+
+    measured = [
+        row
+        for row in rounds
+        if WARMUP_ROUNDS <= row["trial"] <= LAST_TRIAL
+    ]
+
+    if len(measured) == MEASURED_ROUNDS:
+        result["time_ms"] = round(
+            1000.0 * statistics.mean(row["time_seconds"] for row in measured),
+            6,
+        )
+        result["iterations"] = compact_iterations(
+            [row["iterations"] for row in measured if "iterations" in row]
+        )
     else:
-        found = re.search(r'COMPETITION_TIME_SECONDS=' + NUMBER, text)
+        # Compatibility with logs produced before per-round timing was added.
+        found = re.search(r"COMPETITION_TIME_SECONDS=" + NUMBER, text)
         if found:
-            result['competition_seconds'] = float(found[1])
-            result['timing_note'] = 'No per-round transfer breakdown; driver aggregate only.'
-    checks = re.findall(r'RESIDUAL rhs=(\d+) relative_l2=' + NUMBER +
-                        r' absolute_max=' + NUMBER + r' (PASS|FAIL)', text)
-    final_check = re.search(r'VERIFICATION relative_l2=' + NUMBER +
-                           r' threshold=' + NUMBER + r' (PASS|FAIL)', text)
-    if checks:
-        result['rhs_residuals'] = [dict(rhs=int(x[0]), relative_l2=float(x[1]),
-                                      absolute_max=float(x[2]), status=x[3]) for x in checks]
-        result['status'] = 'PASS' if len(checks) == 10 and all(x[3]=='PASS' for x in checks) else 'FAIL'
-        iters = re.findall(r'\brhs=(\d+) iterations=(\d+)', text)
-        if iters:
-            result['iterations_by_rhs'] = {int(k): int(v) for k, v in iters}
+            result["time_ms"] = round(1000.0 * float(found[1]), 6)
+        else:
+            found = re.search(r"(?m)^time_ms=" + NUMBER, text)
+            if found:
+                result["time_ms"] = round(float(found[1]), 6)
+
+    rhs_checks = re.findall(
+        r"RESIDUAL rhs=(\d+) relative_l2="
+        + NUMBER
+        + r" absolute_max="
+        + NUMBER
+        + r" (PASS|FAIL)",
+        text,
+    )
+    final_check = re.search(
+        r"VERIFICATION relative_l2="
+        + NUMBER
+        + r" threshold="
+        + NUMBER
+        + r" (PASS|FAIL)",
+        text,
+    )
+
+    if rhs_checks:
+        result["max_relative_l2"] = max(float(row[1]) for row in rhs_checks)
+        result["max_absolute_max"] = max(float(row[2]) for row in rhs_checks)
+        if len(rhs_checks) == 10 and all(row[3] == "PASS" for row in rhs_checks):
+            result["status"] = "PASS"
+        else:
+            result["status"] = "FAIL"
     elif final_check:
-        result['relative_l2'] = float(final_check[1])
-        result['threshold'] = float(final_check[2])
-        result['status'] = final_check[3]
-    if 'solver creation failed' in text or 'numeric preparation failed' in text:
-        result['status'] = 'FAIL'
+        result["max_relative_l2"] = float(final_check[1])
+        result["status"] = final_check[3]
+
+    error_markers = (
+        "solver creation failed",
+        "numeric preparation failed",
+        "segmentation fault",
+        "core dumped",
+    )
+    if any(marker in text.lower() for marker in error_markers):
+        result["status"] = "FAIL"
+
     return result
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.exit('usage: python3 scripts/summarize_results.py results/run_<timestamp>')
-    root = Path(sys.argv[1])
-    rows = [summarize(p) for p in sorted((root/'run-logs').glob('*.log'))]
-    (root/'performance.json').write_text(json.dumps(rows, indent=2)+'\n')
-    fields = ['case','status','competition_seconds','raw_seconds','excluded_seconds',
-              'linglong_seconds','xianzhi_and_adapter_seconds','iterations','relative_l2']
-    with (root/'performance.tsv').open('w') as f:
-        writer = csv.DictWriter(f, fieldnames=fields, delimiter='\t', extrasaction='ignore')
-        writer.writeheader(); writer.writerows(rows)
-    print(root/'performance.tsv')
+
+def collect_logs(path):
+    """Resolve a run directory, one log, or several logs."""
+    if path.is_dir():
+        run_logs = path / "run-logs"
+        if not run_logs.is_dir():
+            raise ValueError(f"run-log directory not found: {run_logs}")
+        return sorted(run_logs.glob("*.log")), path
+    if path.is_file():
+        return [path], path.parent
+    raise ValueError(f"path not found: {path}")
+
+
+def write_outputs(rows, output_dir):
+    """Write both a machine-readable JSON file and a small TSV table."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    performance_json = output_dir / "performance.json"
+    performance_tsv = output_dir / "performance.tsv"
+
+    performance_json.write_text(json.dumps(rows, indent=2) + "\n")
+    with performance_tsv.open("w", newline="") as stream:
+        writer = csv.DictWriter(
+            stream,
+            fieldnames=OUTPUT_FIELDS,
+            delimiter="\t",
+            extrasaction="ignore",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+    return performance_tsv
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        description="Create performance.tsv and performance.json from solver logs."
+    )
+    parser.add_argument(
+        "paths",
+        nargs="+",
+        metavar="RUN_DIR_OR_LOG",
+        help="run directory, a single run.log, or several logs from one output directory",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv):
+    args = parse_args(argv[1:])
+
+    rows = []
+    output_dir = None
+    for raw_path in args.paths:
+        logs, candidate_output = collect_logs(Path(raw_path))
+        if output_dir is None:
+            output_dir = candidate_output
+        elif candidate_output != output_dir:
+            raise SystemExit("all log files must be in the same output directory")
+        rows.extend(summarize_log(log) for log in logs)
+
+    performance_tsv = write_outputs(rows, output_dir)
+    print(performance_tsv)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

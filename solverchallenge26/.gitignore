@@ -63,6 +63,8 @@ paths.env
 *.su
 *.idb
 *.pdb
+__pycache__/
+*.pyc
 
 # Kernel Module Compile Results
 *.mod*

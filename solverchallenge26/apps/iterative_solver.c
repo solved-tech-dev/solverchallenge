@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     double* val_im  = NULL;         // the csr value array of matrix A (imaginary number)
     SC26_SolutionScalar *x = NULL, *x_im = NULL; // solution vector x, (x: real number, x_im: imaginary number)
     double *b = NULL, *b_im = NULL; // right-hand side vector b, (b: real number, b_im: imaginary number)
-    double  tt, time;
+    double  tt;
 
     char* filename_matrix;       // the filename of matrix A
     char* filename_b;            // the filename of right-hand side vector b
@@ -89,7 +89,9 @@ int main(int argc, char** argv)
         return 1;
 
     x = (SC26_SolutionScalar*)calloc((size_t)n, sizeof(SC26_SolutionScalar));
-    if (sys_type) x_im = (SC26_SolutionScalar*)calloc((size_t)n, sizeof(SC26_SolutionScalar));
+    if (sys_type) {
+        x_im = (SC26_SolutionScalar*)calloc((size_t)n, sizeof(SC26_SolutionScalar));
+    }
 
     struct SC26_SolverInput solver_input = {
         .global_n = n,
@@ -113,17 +115,21 @@ int main(int argc, char** argv)
     /* ========================================== */
     // Step 2: Solve the linear system
     /* ========================================== */
-    time = 0.0;
     if (sys_type == 0) {
         struct MySolver mysolver;
         SC26_SOLVER_CREATE(&mysolver, &solver_input);
+
+        /*
+         * The first five rounds warm up the product and the last five rounds
+         * are measured.  Each measured round is timed independently so that
+         * printing solver statistics does not affect the next round.
+         */
         for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
             tt = GetCurrentTime();
             analyse(&mysolver, &solver_input);
             preprocess(&mysolver, &solver_input);
             iterative_solver(&mysolver, &solver_input);
             double elapsed = GetCurrentTime() - tt;
-            if (trial >= warmup_frequency) time += elapsed;
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
         }
@@ -138,21 +144,17 @@ int main(int argc, char** argv)
             preprocess_complex(&mysolver, &solver_input);
             iterative_solver_complex(&mysolver, &solver_input);
             double elapsed = GetCurrentTime() - tt;
-            if (trial >= warmup_frequency) time += elapsed;
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
         }
         SC26_SOLVER_DESTROY(&mysolver, &solver_input);
     }
-    time /= (double)test_frequency;
 
     fprintf(stdout, "------------------------------------------\n");
 
     /* ========================================== */
-    // Step 3: Check time, memory and correctness
+    // Step 3: Check memory and correctness
     /* ========================================== */
-    // check time
-    fprintf(stdout, "CHECK end to end time :         %12.6lf ms\n", time);
 
     // check the memory
     mem_usage();
@@ -235,9 +237,15 @@ int main(int argc, char** argv)
     long double limit = 1e-8L;
     const char *case_name = getenv("SC26_CASE");
     int q2 = case_name && !strcmp(case_name,"q2");
-    if (!strcmp(SC26_PROBLEM_ID,"01")) limit=q2 ? 1e-8L : 1e-4L;
-    if (!strcmp(SC26_PROBLEM_ID,"02")) limit=q2 ? 1e-10L : 1e-6L;
-    if (!strcmp(SC26_PROBLEM_ID,"07")) limit=1e-6L;
+    if (!strcmp(SC26_PROBLEM_ID, "01")) {
+        limit = q2 ? 1e-8L : 1e-4L;
+    }
+    if (!strcmp(SC26_PROBLEM_ID, "02")) {
+        limit = q2 ? 1e-10L : 1e-6L;
+    }
+    if (!strcmp(SC26_PROBLEM_ID, "07")) {
+        limit = 1e-6L;
+    }
     int passed=isfinite(verified_residual) && verified_residual<limit;
     printf("VERIFICATION relative_l2=%.12Le threshold=%.1Le %s\n",
            verified_residual,limit,passed?"PASS":"FAIL");

@@ -11,15 +11,27 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=load_products.sh
 source "${script_dir}/load_products.sh"
 
-problem="$(printf '%02d' "$((10#${1#problem}))")"
+requested_problem="${1#problem}"
+if [[ ! "$requested_problem" =~ ^[0-9]{1,2}$ ]]; then
+    echo "problem must be 01 through 10" >&2
+    exit 2
+fi
+problem_number="$((10#$requested_problem))"
+if ((problem_number < 1 || problem_number > 10)); then
+    echo "problem must be 01 through 10" >&2
+    exit 2
+fi
+problem="$(printf '%02d' "$problem_number")"
 case "${problem}" in
-    01|02|03|04|05|06|07|08|09|10) ;;
+    01|02|03|04|05|06|07|08|09|10)
+        ;;
     *)
         echo "problem must be 01 through 10" >&2
         exit 2
         ;;
 esac
 
+# Configure the common serial build and select the requested problem slot.
 cmake_args=(
     -S "${SC26_REPO_ROOT}"
     -B "${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}"
@@ -60,6 +72,7 @@ case "${problem}" in
         ;;
 esac
 
+# T01, T02, T04, and T05 load LinglongAMG through XianzhiKrylov.
 case "${problem}" in
     01|02|04|05)
         if [[ -z "${SC26_LINGLONGAMG_LIBRARY:-}" ]]; then
@@ -70,11 +83,20 @@ case "${problem}" in
 esac
 
 "${CMAKE_BIN:-cmake}" "${cmake_args[@]}"
+
 target=iterative_solver
 case "${problem}" in
-    08) target=iterative_solver_multi ;;
-    09|10) target=direct_solver_multi ;;
+    08)
+        target=iterative_solver_multi
+        ;;
+    09|10)
+        target=direct_solver_multi
+        ;;
 esac
-"${CMAKE_BIN:-cmake}" --build "${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}" --target "$target" --parallel
+
+"${CMAKE_BIN:-cmake}" \
+    --build "${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}" \
+    --target "$target" \
+    --parallel
 
 echo "build complete: ${SC26_BUILD_ROOT:-${SC26_REPO_ROOT}/build}/problem${problem}"

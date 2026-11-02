@@ -19,6 +19,7 @@ You need:
 - a Linux computer or an interactive GPU allocation from your cluster;
 - a C and C++ compiler;
 - CMake 3.21 or newer;
+- Python 3;
 - the vendor runtime required by the selected product package;
 - the product packages and licenses for the problems you want to run;
 - the competition matrix and right-hand-side files.
@@ -42,10 +43,10 @@ The required products are:
 ├── apps/                       common test-program entry points
 ├── include/                    official SolverChallenge26 interfaces
 ├── src/                        input readers, residual checks, product adapters
-├── problems/problem01..10/     problem-specific solver settings
+├── problems/problem01..10/     solver settings and short solver notes
 ├── tests/                      template tests
 ├── configs/local.env.example   optional custom-path template
-├── scripts/                    commands used in this guide
+├── scripts/                    build, run, check, and summary commands
 ├── local/                      local packages and licenses; not committed
 ├── build/                      build output; created automatically
 └── results/                    run output; created automatically
@@ -161,7 +162,25 @@ the whole run.
 ls -l local/licenses
 ```
 
-### Step 7: Set the matrix and RHS paths
+### Step 7: Check the environment
+
+Run:
+
+```bash
+./scripts/check_environment.sh
+```
+
+After setting `DATA_ROOT`, also check the matrix and RHS files:
+
+```bash
+./scripts/check_environment.sh "$DATA_ROOT"
+```
+
+The command prints clear `OK`, `WARN`, and `FAIL` messages.
+The same `SC26_PROBLEMS` value used for the run limits the packages and data
+files checked here.
+
+### Step 8: Set the matrix and RHS paths
 
 Set `DATA_ROOT` to the existing directory containing
 `solverchallenge26_01` through `solverchallenge26_10`. Do not copy the data
@@ -171,13 +190,19 @@ files into this repository.
 DATA_ROOT="/absolute/path/to/SolverChallenge26-preparation"
 ```
 
-### Step 8: Build and run all problems
+### Step 9: Build and run problems
 
 ```bash
 ./scripts/run_all_problems.sh "$DATA_ROOT"
 ```
 
-The script builds and runs all ten problems and prints the result directory.
+The script builds and runs all ten problems. To run only selected problems:
+
+```bash
+SC26_PROBLEMS=01,04,07 ./scripts/run_all_problems.sh "$DATA_ROOT"
+```
+
+The script prints the result directory and the final performance table.
 
 ### Find and read the results
 
@@ -192,20 +217,16 @@ The files are stored as:
 ```text
 results/run_<timestamp>/
 ├── summary.tsv
+├── performance.tsv
+├── performance.json
 ├── build-logs/
-└── run-logs/
+├── run-logs/
+└── solutions/
 ```
 
-To collect per-round time and solver statistics into tables, run:
-
-```bash
-python3 scripts/summarize_results.py "$latest_run"
-```
-
-This writes `performance.tsv` and `performance.json` in the same result
-folder. An empty field means the library did not report that measurement.
-LinglongAMG time is nested inside the outer solver time, not added to it.
-The remaining time includes XianzhiKrylov and adapter overhead.
+The script writes `performance.tsv` and `performance.json` automatically.
+The TSV contains `case`, `status`, `time_ms`, `iterations`,
+`max_relative_l2`, and `max_absolute_max`.
 
 `PASS` in a run row means the solve and residual check succeeded. For a failed case, open
 its log:
@@ -214,12 +235,12 @@ its log:
 cat "$latest_run/run-logs/T01_q1.log"
 ```
 
-### Step 9: Run one problem
+### Step 10: Run one problem
 
 Each problem can also be built and run independently. The command prints
 its output folder under `results/TNN_qN_<timestamp>/`. Open `run.log` there
-to see the timing and residual. `answer_x.rhs`, when produced, contains the
-computed solution.
+for diagnostics. Use `performance.tsv` for the final time, iteration count,
+and residual. `answer_x.rhs`, when produced, contains the computed solution.
 
 #### Problems with one RHS: T03, T04, T05, T06, and T07
 
@@ -268,28 +289,24 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 The programs target one BW1000 DCU. The checked packages use DTK26.04.
 The scripts select 4, 8, or 16 CPU threads according to the problem.
 Per-problem runtime settings are in `problems/problemNN/config/runtime*.env`.
-
-T04's optional device-input preparation requires
-the matching LinglongAMG candidate; see `problems/problem04/README.md`. Timing follows the SolverChallenge26 phase rules: it includes
-analysis, numerical preparation, and solve, while excluding input reading,
-initial data upload, object creation, result copying, and residual
-verification.
+Each problem directory also has a short README with its solver and
+preconditioner.
 
 ## Problem and method map
 
 | Problem | Preconditioner | Solver | RHS |
 |---|---|---|---:|
-| T01 | LinglongAMG | XianzhiKrylov FGMRES-DD; BiCGStab up to 4 steps inside each preconditioner application | 1 |
-| T02 q1 | LinglongAMG | XianzhiKrylov PCG with constant-mode projection | 1 |
-| T02 q2 | LinglongAMG | XianzhiKrylov FGMRES-DD; FGMRES up to 4 steps inside each preconditioner application | 1 |
-| T03 | PanguLU | XianzhiKrylov FGMRES-DD | 1 |
-| T04 | LinglongAMG elasticity AMG | XianzhiKrylov PCG | 1 |
-| T05 | LinglongAMG | XianzhiKrylov FGMRES | 1 |
-| T06 | PanguLU | XianzhiKrylov complex FGMRES | 1 |
-| T07 | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov BiCGStab | 1 |
-| T08 | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | 10 |
-| T09 | none | PanguLU direct LU | 10 |
-| T10 | none | PanguLU complex direct LU | 10 |
+| [T01](problems/problem01/README.md) | LinglongAMG | XianzhiKrylov FGMRES | 1 |
+| [T02 q1](problems/problem02/README.md) | LinglongAMG | XianzhiKrylov PCG | 1 |
+| [T02 q2](problems/problem02/README.md) | LinglongAMG | XianzhiKrylov FGMRES | 1 |
+| [T03](problems/problem03/README.md) | PanguLU | XianzhiKrylov FGMRES | 1 |
+| [T04](problems/problem04/README.md) | LinglongAMG | XianzhiKrylov PCG | 1 |
+| [T05](problems/problem05/README.md) | LinglongAMG | XianzhiKrylov FGMRES | 1 |
+| [T06](problems/problem06/README.md) | PanguLU | XianzhiKrylov complex FGMRES | 1 |
+| [T07](problems/problem07/README.md) | XianzhiKrylov block Jacobi | XianzhiKrylov BiCGStab | 1 |
+| [T08](problems/problem08/README.md) | XianzhiKrylov ILU(0) | XianzhiKrylov complex FGMRES | 10 |
+| [T09](problems/problem09/README.md) | none | PanguLU direct LU | 10 |
+| [T10](problems/problem10/README.md) | none | PanguLU complex direct LU | 10 |
 
 ## Timing
 
@@ -306,23 +323,16 @@ Direct methods run:
 ANALYSIS -> NUMERIC_FACTORISATION -> SOLVE
 ```
 
-The raw measured time is the mean of rounds 6 through 10. Each round has
-its own timer, so printing statistics between rounds is not included.
+The reported `time_ms` is the mean of rounds 6 through 10. Each round has its
+own timer, so printing statistics between rounds is not included.
 `TRIAL trial=0..9` records these rounds (the first measured round is trial 5).
 
-Input reading, CSR sorting, initial GPU upload, handle creation, result
-copying, and independent residual verification happen outside these timers.
+Input reading, matrix sorting, handle creation, result copying, and
+independent residual verification happen outside these timers.
 Restoring the zero initial guess is included in each solve. Repeated calls
-rebuild the preparation; they do not reuse the previous round's factorization.
-For ten RHS, one round reuses its factorization across those RHS.
-
-Some packages still perform transfers or format conversion inside their
-execute function. The raw timer includes those operations. Where the library
-reports `excluded_input_transfer_seconds` or
-`excluded_format_conversion_seconds`, subtract these measured fields from
-each round before averaging to obtain competition time. Keep the raw time
-and exclusions alongside the corrected result; do not treat the raw time
-as transfer-free.
+rebuild the preparation; they do not reuse the previous round's
+factorization. For ten RHS, one round reuses its factorization across those
+RHS. Use the `time_ms` field in `performance.tsv` as the reported time.
 
 Timers are in `apps/iterative_solver.c`, `apps/iterative_solver_multi.c`, and
 `apps/direct_solver_multi.c`. Library statistics follow each `TRIAL` line.

@@ -47,13 +47,17 @@ below each package directory.
 The helper scripts load these paths automatically:
 
 ```bash
+./scripts/check_environment.sh
 ./scripts/run_all_problems.sh /path/to/SolverChallenge26-preparation
 
 ./scripts/build_problem.sh 07
 ./scripts/run_problem.sh 07 MATRIX RHS
 ```
 
-`run_all_problems.sh` writes build and run logs plus `summary.tsv` under
+Set `SC26_PROBLEMS` when a machine has packages for only some problems.
+
+`run_all_problems.sh` writes build and run logs, solutions, and the
+`summary.tsv`, `performance.tsv`, and `performance.json` files under
 `results/run_<timestamp>/`.
 
 No file below `local/packages/` or `local/licenses/` is committed to Git.
