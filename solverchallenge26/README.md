@@ -22,10 +22,52 @@ You need:
 - Python 3;
 - the vendor runtime required by the selected product package;
 - the product packages and licenses for the problems you want to run;
+- a site-provided glibc compatibility runtime when the host glibc is older
+  than the selected package;
 - the competition matrix and right-hand-side files.
 
-Start an interactive GPU allocation by using the method provided by your
-cluster.
+Build and run inside a GPU allocation. Do not compile or run the solver on the
+login node.
+
+### Tested BW1000 cluster
+
+The tested competition cluster runs Sugon OS 8.9 with glibc 2.28. Its DTK
+26.04 installation is loaded on compute nodes with the
+`compiler/dtk/26.04` module. A typical one-GPU allocation is:
+
+```bash
+salloc \
+  --partition=hx1hdnormal \
+  --nodes=1 \
+  --ntasks=1 \
+  --cpus-per-task=16 \
+  --gres=dcu:1 \
+  --mem=58G \
+  --time=02:00:00
+srun --jobid="${SLURM_JOB_ID}" -N1 -n1 --pty bash
+```
+
+Adjust the partition and resource values if your cluster uses different
+names. Run the remaining commands in the shell opened by `srun`:
+
+```bash
+source /etc/profile.d/modules.sh
+module load compiler/dtk/26.04
+command -v hipcc
+
+export WORK_ROOT="/work2/${USER}"
+export TMPDIR="${WORK_ROOT}/tmp/solverchallenge26"
+mkdir -p "${WORK_ROOT}" "${TMPDIR}"
+
+git clone https://github.com/solved-tech-dev/solverchallenge.git \
+  "${WORK_ROOT}/solverchallenge"
+cd "${WORK_ROOT}/solverchallenge/solverchallenge26"
+```
+
+Use cluster work storage rather than the login-node home directory or
+`/tmp`. The tested cluster has a small `/tmp`; exhausting it can make CMake
+report the misleading error `C compiler is not able to compile a simple test
+program`.
 
 The required products are:
 
@@ -59,6 +101,9 @@ the public SolverChallenge26 template.
 
 ### Step 1: Get the project
 
+If you followed the tested BW1000 cluster block above, the repository is
+already under `/work2/${USER}`; skip the clone command in this step.
+
 If Git is available, run:
 
 ```bash
@@ -86,25 +131,46 @@ c++ --version
 ```
 
 If a command is missing, load the corresponding environment module before
-continuing. On the tested BW1000 cluster, the runtime is loaded with:
+continuing. On compute nodes of the tested BW1000 cluster, the runtime is
+loaded with:
 
 ```bash
+source /etc/profile.d/modules.sh
 module load compiler/dtk/26.04
 ```
 
 Check the system C library version with `ldd --version` and compare it with
 the package README. The tested XianzhiKrylov and LinglongAMG builds require
-glibc2.35. On an older system, use a compatible package or a compatibility
-runtime supplied by your administrator. For the latter, add this to
+glibc2.35, while the tested PanguLU package requires glibc2.29. The tested
+cluster only provides glibc2.28. On an older system, use a compatible package
+or a compatibility runtime supplied by your administrator. For the latter,
+place the complete runtime in `local/compat-runtime` and add this to
 `configs/local.env`:
 
 ```bash
-export SC26_COMPAT_ROOT="/absolute/path/to/site/compat-runtime"
+export SC26_COMPAT_ROOT="/absolute/path/to/solverchallenge26/local/compat-runtime"
 ```
 
 The directory must contain `ld-linux-x86-64.so.2` and its matching libraries.
 The script applies it only to the solver. Do not add that directory to the
 shell's `LD_LIBRARY_PATH`.
+
+The tested LinglongAMG package also requires `libmsgpackc.so.2`. If that
+library is not installed system-wide, it must be present in the compatibility
+runtime. Check it with:
+
+```bash
+test -e "${SC26_COMPAT_ROOT}/libmsgpackc.so.2"
+find "${SC26_COMPAT_ROOT}" -maxdepth 1 \
+  \( -name 'libgalaxyhip.so*' -o -name 'libamdhip64.so*' \) -print
+```
+
+When running on the tested cluster, also select the runtime explicitly in
+`configs/local.env`:
+
+```bash
+export SC26_HIP_RUNTIME_LIBRARY=/public/software/compiler/dtk-26.04/hip/lib/libgalaxyhip.so.5
+```
 
 ### Step 3: Create the local folders
 
@@ -115,7 +181,8 @@ mkdir -p local/downloads \
          local/packages/pangulu \
          local/packages/linglongamg \
          local/packages/xianzhikrylov \
-         local/licenses
+         local/licenses \
+         local/compat-runtime
 ```
 
 ### Step 4: Put the downloaded packages in `local/downloads`
@@ -157,6 +224,10 @@ cp local/licenses/xianzhikrylov-*.key local/packages/xianzhikrylov/license.key
 Keep only the current key for each product in `local/licenses` before running
 these commands. Each key must match the allocated GPU and remain valid for
 the whole run.
+
+The files in `local/licenses` are used by `check_environment.sh`. The product
+libraries read the copies named `license.key` inside their package roots.
+After renewing a license, replace both copies and remove stale keys.
 
 ```bash
 ls -l local/licenses
@@ -332,9 +403,11 @@ own timer, so printing statistics between rounds is not included.
 Input reading, matrix sorting, handle creation, result copying, and
 independent residual verification happen outside these timers.
 Restoring the zero initial guess is included in each solve. Repeated calls
-rebuild the preparation; they do not reuse the previous round's
-factorization. For ten RHS, one round reuses its factorization across those
-RHS. Use the `time_ms` field in `performance.tsv` as the reported time.
+with the same matrix descriptor reuse the completed analysis and numerical
+preparation; the current RHS is rebound for each solve. Create a new matrix
+descriptor if the matrix values or layout change. For ten RHS, one round
+reuses its factorization across those RHS. Use the `time_ms` field in
+`performance.tsv` as the reported time.
 
 Timers are in `apps/iterative_solver.c`, `apps/iterative_solver_multi.c`, and
 `apps/direct_solver_multi.c`. Library statistics follow each `TRIAL` line.
@@ -353,11 +426,27 @@ T09 and T10 check relative L2 residual for every RHS.
 ## Troubleshooting
 
 - `Permission denied`: run `chmod +x scripts/*.sh`.
-- `cmake` or `c++` is missing: load the corresponding cluster module.
+- `module: command not found`: run `source /etc/profile.d/modules.sh`.
+- `Unable to locate a modulefile`: load `compiler/dtk/26.04` on a compute
+  node inside the Slurm allocation; the login node may not expose that module.
+- `C compiler is not able to compile a simple test program` with
+  `No space left on device`: set `TMPDIR` below `/work2`, remove only the
+  failed `build/problemNN` directory, and rerun the build.
+- `GLIBC_2.29 not found` or `GLIBC_2.35 not found`: configure the complete
+  compatibility runtime through `SC26_COMPAT_ROOT`.
+- `libmsgpackc.so.2: cannot open shared object file`: add the library to the
+  compatibility runtime or install the same version system-wide.
+- `hip: driver library unavailable`: load DTK inside the GPU allocation and
+  run the GPU-identity tool on the allocated node.
 - Package archive is missing: check `local/downloads`.
 - Package file is missing: check `local/packages`.
 - Custom package paths are needed: set them in `configs/local.env`.
-- License error: check expiry and GPU identity, then update the matching package-root `license.key`.
+- `license.key` not found: place the key both in `local/licenses` and in the
+  corresponding package root.
+- License expired or machine mismatch: request a key for the current GPU
+  allocation; do not reuse a key issued for another card.
+- `BATCH_ERROR out of memory` in T08: use the current 26.45 XianzhiKrylov
+  package. Do not reduce `batch`; that was not a numerically valid workaround.
 - Shared library error: load the vendor runtime or set
   `SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env`.
 - Matrix or RHS is missing: check `DATA_ROOT`.

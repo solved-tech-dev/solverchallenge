@@ -20,6 +20,22 @@ local/
     └── xianzhikrylov.license.key
 ```
 
+For an older operating system, also install the complete site-provided
+compatibility runtime as:
+
+```text
+local/
+└── compat-runtime/
+    ├── ld-linux-x86-64.so.2
+    ├── libc.so.6
+    ├── libstdc++.so.6
+    ├── libmsgpackc.so.2
+    └── other libraries required by the packages
+```
+
+Set `SC26_COMPAT_ROOT` in `configs/local.env`. The compatibility runtime is
+required on the tested Sugon OS 8.9 cluster because its system glibc is 2.28.
+
 Each package directory must contain the package payload directly. If an
 archive creates an additional top-level version directory, either remove that
 extra level or point to the real path from `configs/local.env`.

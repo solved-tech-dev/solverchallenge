@@ -153,6 +153,13 @@ check_command "c++" "C++ compiler"
 check_command "python3" "Python 3"
 check_command "realpath" "realpath"
 
+if command -v getconf >/dev/null 2>&1; then
+    glibc_version="$(getconf GNU_LIBC_VERSION 2>/dev/null || true)"
+    if [[ -n "$glibc_version" ]]; then
+        print_ok "System C library: ${glibc_version}"
+    fi
+fi
+
 cmake_version="$(cmake --version 2>/dev/null | head -n 1 || true)"
 if [[ -n "$cmake_version" ]]; then
     print_ok "$cmake_version"
@@ -208,6 +215,36 @@ if [[ -n "${SC26_COMPAT_ROOT:-}" ]]; then
     check_file \
         "${SC26_COMPAT_ROOT}/ld-linux-x86-64.so.2" \
         "Compatibility loader"
+fi
+
+if needs_linglong; then
+    msgpack_found=0
+    if [[ -n "${SC26_COMPAT_ROOT:-}" &&
+          -e "${SC26_COMPAT_ROOT}/libmsgpackc.so.2" ]]; then
+        print_ok "libmsgpackc: ${SC26_COMPAT_ROOT}/libmsgpackc.so.2"
+        msgpack_found=1
+    elif command -v ldconfig >/dev/null 2>&1 &&
+         ldconfig -p 2>/dev/null | grep -q 'libmsgpackc\.so\.2'; then
+        print_ok "libmsgpackc.so.2 found by ldconfig"
+        msgpack_found=1
+    fi
+    if ((msgpack_found == 0)); then
+        print_error "libmsgpackc.so.2 not found; LinglongAMG requires it"
+    fi
+fi
+
+if [[ -n "${SC26_HIP_RUNTIME_LIBRARY:-}" ]]; then
+    check_file "${SC26_HIP_RUNTIME_LIBRARY}" "HIP runtime library"
+fi
+
+if [[ -n "${TMPDIR:-}" ]]; then
+    if [[ -d "$TMPDIR" && -w "$TMPDIR" ]]; then
+        print_ok "Compiler temporary directory: $TMPDIR"
+    else
+        print_error "TMPDIR is not a writable directory: $TMPDIR"
+    fi
+else
+    print_warn "TMPDIR is not set; /tmp may have insufficient space"
 fi
 
 if command -v rocm-smi >/dev/null 2>&1; then
