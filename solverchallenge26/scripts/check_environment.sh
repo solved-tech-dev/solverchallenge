@@ -5,7 +5,11 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=load_products.sh
 source "${script_dir}/load_products.sh"
 
-data_root="${1:-}"
+data_root="${1:-${SC26_DATA_ROOT:-}}"
+if [[ -z "$data_root" &&
+      -d "/public/share/ac3k88uz8y/SolverChallenge26-TenProblems" ]]; then
+    data_root="/public/share/ac3k88uz8y/SolverChallenge26-TenProblems"
+fi
 errors=0
 warnings=0
 

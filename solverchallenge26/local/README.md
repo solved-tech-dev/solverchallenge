@@ -48,6 +48,7 @@ The helper scripts load these paths automatically:
 
 ```bash
 ./scripts/check_environment.sh
+./scripts/run_all_problems.sh
 ./scripts/run_all_problems.sh /path/to/SolverChallenge26-preparation
 
 ./scripts/build_problem.sh 07
@@ -55,6 +56,8 @@ The helper scripts load these paths automatically:
 ```
 
 Set `SC26_PROBLEMS` when a machine has packages for only some problems.
+On the competition cluster, `run_all_problems.sh` uses
+`/public/share/ac3k88uz8y/SolverChallenge26-TenProblems` by default.
 
 `run_all_problems.sh` writes build and run logs, solutions, and the
 `summary.tsv`, `performance.tsv`, and `performance.json` files under

@@ -5,7 +5,13 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=load_products.sh
 source "${script_dir}/load_products.sh"
 
-default_data_root="${SC26_LOCAL_ROOT}/data/SolverChallenge26-preparation"
+competition_data_root="/public/share/ac3k88uz8y/SolverChallenge26-TenProblems"
+local_data_root="${SC26_LOCAL_ROOT}/data/SolverChallenge26-preparation"
+if [[ -d "$competition_data_root" ]]; then
+    default_data_root="$competition_data_root"
+else
+    default_data_root="$local_data_root"
+fi
 data_root="${1:-${SC26_DATA_ROOT:-$default_data_root}}"
 
 timestamp="$(TZ=Asia/Shanghai date +%Y%m%dT%H%M%S%z)"

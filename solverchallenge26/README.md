@@ -182,13 +182,15 @@ files checked here.
 
 ### Step 8: Set the matrix and RHS paths
 
-Set `DATA_ROOT` to the existing directory containing
-`solverchallenge26_01` through `solverchallenge26_10`. Do not copy the data
-files into this repository.
+On the competition cluster, use the shared directory:
 
 ```bash
-DATA_ROOT="/absolute/path/to/SolverChallenge26-preparation"
+DATA_ROOT="/public/share/ac3k88uz8y/SolverChallenge26-TenProblems"
 ```
+
+This directory contains `solverchallenge26_01` through
+`solverchallenge26_10`. Do not copy the data files into this repository.
+On another system, set `DATA_ROOT` or `SC26_DATA_ROOT` to your own directory.
 
 ### Step 9: Build and run problems
 
