@@ -269,10 +269,7 @@ The programs target one BW1000 DCU. The checked packages use DTK26.04.
 The scripts select 4, 8, or 16 CPU threads according to the problem.
 Per-problem runtime settings are in `problems/problemNN/config/runtime*.env`.
 
-The current downloaded XianzhiKrylov26.45 package rejects T06's complex
-FGMRES with a PanguLU preconditioner. T06 needs a package that provides that
-combination. Its failed run is reported in `summary.tsv`; it is not replaced
-with a different solver. T04's optional device-input preparation requires
+T04's optional device-input preparation requires
 the matching LinglongAMG candidate; see `problems/problem04/README.md`. Timing follows the SolverChallenge26 phase rules: it includes
 analysis, numerical preparation, and solve, while excluding input reading,
 initial data upload, object creation, result copying, and residual
@@ -287,7 +284,7 @@ verification.
 | T02 q2 | LinglongAMG | XianzhiKrylov FGMRES-DD; FGMRES up to 4 steps inside each preconditioner application | 1 |
 | T03 | PanguLU | XianzhiKrylov FGMRES-DD | 1 |
 | T04 | LinglongAMG elasticity AMG | XianzhiKrylov PCG | 1 |
-| T05 | LinglongAMG | XianzhiKrylov BiCGStab | 1 |
+| T05 | LinglongAMG | XianzhiKrylov FGMRES | 1 |
 | T06 | PanguLU | XianzhiKrylov complex FGMRES | 1 |
 | T07 | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov BiCGStab | 1 |
 | T08 | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | 10 |

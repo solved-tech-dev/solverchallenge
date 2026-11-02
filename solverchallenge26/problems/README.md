@@ -14,8 +14,8 @@ The populated slots in this repository are:
 | problem02 q1 | iterative | LinglongAMG | XianzhiKrylov Projected PCG | none |
 | problem02 q2 | iterative | LinglongAMG | XianzhiKrylov FGMRES-DD | FGMRES, max 4 steps |
 | problem03 | iterative | PanguLU | XianzhiKrylov FGMRES-DD | none |
-| problem04 | not selected | none | placeholder | none |
-| problem05 | iterative | LinglongAMG | XianzhiKrylov BiCGStab | none |
+| problem04 | iterative | LinglongAMG | XianzhiKrylov PCG | none |
+| problem05 | iterative | LinglongAMG | XianzhiKrylov FGMRES | none |
 | problem06 | iterative | PanguLU | XianzhiKrylov complex FGMRES | none |
 | problem07 | iterative | XianzhiKrylov 3×3 block Jacobi | XianzhiKrylov BiCGStab | none |
 | problem08 | iterative | filtered ILU(0) | XianzhiKrylov batched complex FGMRES | none |
