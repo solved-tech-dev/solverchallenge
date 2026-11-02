@@ -1,11 +1,16 @@
 # SolverChallenge26 Problem Solvers
 
-This repository contains ready-to-build solver programs for all ten
-SolverChallenge26 problems.
+SolverChallenge26 is the sixth edition of the annual linear solver algorithm and performance optimization competition organized by the SOLVER conference committee. It features ten linear systems drawn from real-world scientific and engineering applications, challenging participants to develop and optimize solvers under problem-specific accuracy and resource constraints on designated computing platforms.
 
-The repository does not contain product libraries, licenses, matrices, or
-right-hand sides. You can download the libraries and licenses from
-[https://store.solved-tech.com/](https://store.solved-tech.com/).
+This repository provides solver programs for all ten SolverChallenge26 problems using **PanguLU, LinglongAMG, and XianzhiKrylov**. The repository does not contain product libraries, licenses, matrices, or right-hand sides. You can download the libraries and licenses from [https://store.solved-tech.com/](https://store.solved-tech.com/).
+
+**Competition and conference information**
+
+- **SolverChallenge26 website:** [https://www.solver-conference.cn/solverchallenge26/](https://www.solver-conference.cn/solverchallenge26/)
+- **SOLVER26 website:** [https://www.solver-conference.cn/](https://www.solver-conference.cn/)
+- **Conference dates:** November 27–30, 2026
+- **Location:** Shenzhen, Guangdong, China
+- **Competition presentations and awards:** Held during SOLVER26; please refer to the conference website for the detailed schedule.
 
 ## What you need
 
