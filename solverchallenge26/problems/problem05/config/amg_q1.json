@@ -2,12 +2,12 @@
   "config_version": 2,
   "setup": {
     "max_levels": 50,
-    "min_coarse_size": 512,
+    "min_coarse_size": 4096,
     "coarsening_method": "aggregation",
     "aggregation_limit": 4,
     "presweeps": 0,
     "postsweeps": 1,
-    "dilu_omega": 1.0,
+    "dilu_omega": 1.1,
     "coarsest_sweeps": 4,
     "rap_method": "onestep",
     "block_size": 4,
@@ -16,7 +16,7 @@
   },
   "solve": {
     "method": "amg",
-    "cycle": "v",
+    "cycle": "f",
     "smoother": "mc_dilu",
     "max_iters": 1,
     "tolerance": 1e-30,
@@ -36,6 +36,10 @@
   },
   "execution": {
     "one_cycle": 1,
-    "zero_start_apply": 1
+    "zero_start_apply": 1,
+    "dilu_skip_zero": 1,
+    "dilu_vector_fusion": 1,
+    "dilu_coarse_zero": 1,
+    "dilu_exact_zero": 1
   }
 }

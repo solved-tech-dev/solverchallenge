@@ -2,10 +2,13 @@
   "extended_solver": {
     "method": "bicgstab_amg",
     "provider": "linglongamg",
+    "integration": "dynamic",
     "library_path": "@LINGLONGAMG_LIBRARY@",
     "config_path": "@LINGLONGAMG_CONFIG@",
-    "max_iterations": 2000,
+    "max_iterations": 200,
     "relative_tolerance": 1e-08,
-    "inner_method": "none"
+    "inner_method": "none",
+    "outer_fp64_reductions": true,
+    "outer_fused_updates": true
   }
 }
