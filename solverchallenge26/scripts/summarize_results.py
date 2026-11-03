@@ -15,7 +15,6 @@ NUMBER = r"([0-9.eE+\-]+)"
 WARMUP_ROUNDS = 5
 MEASURED_ROUNDS = 5
 LAST_TRIAL = WARMUP_ROUNDS + MEASURED_ROUNDS - 1
-INPUT_UPLOAD_GAP_SECONDS = 0.05
 
 OUTPUT_FIELDS = (
     "case",
@@ -74,20 +73,11 @@ def summarize_log(path):
         if found:
             row["iterations"] = int(found[1])
 
-        prepare_seconds = row.get("prepare_solve_seconds")
-        has_external_upload = (
-            prepare_seconds is not None
-            and row["raw_seconds"] - prepare_seconds > INPUT_UPLOAD_GAP_SECONDS
-        )
-        if has_external_upload:
-            base_seconds = prepare_seconds
-            input_transfer = 0.0
-        else:
-            base_seconds = row["raw_seconds"]
-            input_transfer = row.get("excluded_input_transfer_seconds", 0.0)
-
-        format_conversion = row.get("excluded_format_conversion_seconds", 0.0)
-        row["time_seconds"] = base_seconds - input_transfer - format_conversion
+        # The application timer already starts after input loading and emits
+        # raw_seconds over the competition solve phases.  The excluded_* fields
+        # are diagnostics; on reused T04/T07 paths they can describe work that
+        # was not repeated and must not be subtracted from every measured round.
+        row["time_seconds"] = row["raw_seconds"]
         rounds.append(row)
 
     measured = [
