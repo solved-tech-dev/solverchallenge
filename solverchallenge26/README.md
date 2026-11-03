@@ -300,6 +300,11 @@ results/run_<timestamp>/
 The script writes `performance.tsv` and `performance.json` automatically.
 The TSV contains `case`, `status`, `time_ms`, `iterations`,
 `max_relative_l2`, and `max_absolute_max`.
+Each directory under `solutions/` contains the same `run.log`,
+`performance.tsv`, `performance.json`, and `answer_x.rhs` files as a
+single-problem run.
+`summary.tsv` records build and run status for the pipeline; use
+`performance.tsv` or `performance.json` for timing results.
 
 `PASS` in a run row means the solve and residual check succeeded. For a failed case, open
 its log:
@@ -311,9 +316,22 @@ cat "$latest_run/run-logs/T01_q1.log"
 ### Step 10: Run one problem
 
 Each problem can also be built and run independently. The command prints
-its output folder under `results/TNN_qN_<timestamp>/`. Open `run.log` there
-for diagnostics. Use `performance.tsv` for the final time, iteration count,
-and residual. `answer_x.rhs`, when produced, contains the computed solution.
+the result directory and a one-row performance table. A one-constraint
+problem uses `results/TNN_<timestamp>/`; T01 and T02 use
+`results/TNN_q1_<timestamp>/` and `results/TNN_q2_<timestamp>/`.
+
+Every result directory contains:
+
+```text
+run.log
+performance.tsv
+performance.json
+answer_x.rhs
+```
+
+`run.log` contains the complete solver output. `performance.tsv` and
+`performance.json` use the same columns and fields as the all-problems run.
+`answer_x.rhs`, when produced, contains the computed solution.
 
 #### Problems with one RHS: T03, T04, T05, T06, and T07
 

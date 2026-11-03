@@ -45,16 +45,24 @@ for rhs in "$@"; do
     rhs_files+=("$(realpath -e -- "$rhs")")
 done
 
-case "${SC26_CASE:-q1}" in
-    q1|q2)
-        ;;
-    *)
-        echo "SC26_CASE must be q1 or q2" >&2
-        exit 2
-        ;;
-esac
+case_label=""
+case_suffix=""
+if [[ "$problem" == "01" || "$problem" == "02" ]]; then
+    case_label="${SC26_CASE:-q1}"
+    case "$case_label" in
+        q1|q2)
+            ;;
+        *)
+            echo "SC26_CASE must be q1 or q2" >&2
+            exit 2
+            ;;
+    esac
+    export SC26_CASE="$case_label"
+    case_suffix="_${case_label}"
+else
+    unset SC26_CASE
+fi
 
-export SC26_CASE="${SC26_CASE:-q1}"
 config_dir="${SC26_CONFIG_DIR:-${SC26_REPO_ROOT}/problems/problem${problem}/config}"
 export SC26_CONFIG_DIR="$config_dir"
 
@@ -62,7 +70,7 @@ export SC26_CONFIG_DIR="$config_dir"
 # accuracy requirement.
 profile="${SC26_CONFIG_DIR}/runtime.env"
 if [[ "$problem" == "02" ]]; then
-    profile="${SC26_CONFIG_DIR}/runtime_${SC26_CASE}.env"
+    profile="${SC26_CONFIG_DIR}/runtime_${case_label}.env"
 fi
 if [[ -f "$profile" ]]; then
     # shellcheck disable=SC1090
@@ -127,7 +135,8 @@ fi
 executable="$(realpath -e -- "$executable")"
 
 timestamp="$(date +%Y%m%dT%H%M%S)"
-output="${SC26_OUTPUT_DIR:-${SC26_REPO_ROOT}/results/T${problem}_${SC26_CASE}_${timestamp}}"
+result_case="T${problem}${case_suffix}"
+output="${SC26_OUTPUT_DIR:-${SC26_REPO_ROOT}/results/${result_case}_${timestamp}}"
 mkdir -p "$output"
 output="$(realpath -- "$output")"
 echo "Output: $output"
@@ -154,11 +163,12 @@ solver_status=0
     tee "$output/run.log" || solver_status=$?
 
 summary_status=0
-SC26_RESULT_CASE="T${problem}_${SC26_CASE}" \
+SC26_RESULT_CASE="$result_case" \
     python3 "${script_dir}/summarize_results.py" "$output/run.log" ||
     summary_status=$?
 if [[ -f "$output/performance.tsv" ]]; then
     echo
+    echo "Performance: $output/performance.tsv"
     cat "$output/performance.tsv"
 fi
 
