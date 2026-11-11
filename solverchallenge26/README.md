@@ -469,6 +469,9 @@ T09 and T10 check relative L2 residual for every RHS.
   allocation; do not reuse a key issued for another card.
 - `BATCH_ERROR out of memory` in T08: use the current 26.46 XianzhiKrylov
   package. Do not reduce `batch`; that was not a numerically valid workaround.
+- T04 numeric preparation fails: verify that LinglongAMG is the current
+  26.46 package for DTK26.04. Older builds are not compatible with the
+  published T04 configuration.
 - Shared library error: load the vendor runtime or set
   `SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env`.
 - `Permission denied` when reading the competition data directory: ask the
