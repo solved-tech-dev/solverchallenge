@@ -203,7 +203,7 @@ def main(argv):
 
     performance_tsv = write_outputs(rows, output_dir)
     print(performance_tsv)
-    return 0
+    return 0 if rows and all(row["status"] == "PASS" for row in rows) else 1
 
 
 if __name__ == "__main__":

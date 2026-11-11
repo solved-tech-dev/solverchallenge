@@ -131,54 +131,78 @@ int main(int argc, char **argv)
 
     const int warmup_frequency = 5;
     const int test_frequency = 5;
-    double local_total_ms = 0.0;
-    double local_upload_ms = 0.0;
-    double local_download_ms = 0.0;
+    double measured_total_ms = 0.0;
+    double max_upload_ms = 0.0;
+    double max_download_ms = 0.0;
     unsigned long long local_gpu_tracked_peak = 0;
     unsigned long long local_gpu_observed_peak = 0;
-    struct SC26_GpuDirectSolver *solver = NULL;
-    struct SC26_GpuMemoryMetrics memory_metrics = {0, 0};
     int global_status = 0;
-    status = sc26_gpu_direct_solver_create(&input, &solver);
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
-    double upload_start = MPI_Wtime();
-    if (!status) status = sc26_gpu_direct_solver_upload(solver);
-    local_upload_ms = (MPI_Wtime() - upload_start) * 1000.0;
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
-    for (int trial = 0; trial < warmup_frequency && !status; ++trial)
-        status = sc26_gpu_direct_solver_solve(solver);
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
-    if (!status && cudaDeviceSynchronize() != cudaSuccess)
-        status = SC26_GPU_ERR_ARGUMENT;
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
-    MPI_Barrier(MPI_COMM_WORLD);
-    double solve_start = MPI_Wtime();
-    for (int trial = 0; trial < test_frequency && !status; ++trial)
-        status = sc26_gpu_direct_solver_solve(solver);
-    if (!status && cudaDeviceSynchronize() != cudaSuccess)
-        status = SC26_GPU_ERR_ARGUMENT;
-    local_total_ms = (MPI_Wtime() - solve_start) * 1000.0;
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
-    double copy_start = MPI_Wtime();
-    if (!status) status = sc26_gpu_direct_solver_copy_solution(solver);
-    local_download_ms = (MPI_Wtime() - copy_start) * 1000.0;
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
-    if (!status) status = sc26_gpu_direct_solver_get_memory_metrics(solver, &memory_metrics);
-    local_gpu_tracked_peak = memory_metrics.tracked_peak_bytes;
-    local_gpu_observed_peak = memory_metrics.observed_peak_bytes;
-    if (solver) sc26_gpu_direct_solver_destroy(solver);
-    MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-    status = global_status;
+    for (int trial = 0; trial < warmup_frequency + test_frequency && !status;
+         ++trial) {
+        struct SC26_GpuDirectSolver *solver = NULL;
+        struct SC26_GpuMemoryMetrics memory_metrics = {0, 0};
+        double upload_ms = 0.0;
+        double download_ms = 0.0;
+        double total_ms = 0.0;
+
+        memset(input.x, 0, sizeof(*input.x) * (size_t)input.local_n);
+        if (sys_type)
+            memset(input.x_im, 0, sizeof(*input.x_im) * (size_t)input.local_n);
+
+        status = sc26_gpu_direct_solver_create(&input, &solver);
+        MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX,
+                      MPI_COMM_WORLD);
+        status = global_status;
+
+        double upload_start = MPI_Wtime();
+        if (!status) status = sc26_gpu_direct_solver_upload(solver);
+        upload_ms = (MPI_Wtime() - upload_start) * 1000.0;
+        if (upload_ms > max_upload_ms) max_upload_ms = upload_ms;
+        MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX,
+                      MPI_COMM_WORLD);
+        status = global_status;
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        double solve_start = MPI_Wtime();
+        if (!status) status = sc26_gpu_direct_solver_solve(solver);
+        if (!status && cudaDeviceSynchronize() != cudaSuccess)
+            status = SC26_GPU_ERR_ARGUMENT;
+        MPI_Barrier(MPI_COMM_WORLD);
+        total_ms = (MPI_Wtime() - solve_start) * 1000.0;
+        MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX,
+                      MPI_COMM_WORLD);
+        status = global_status;
+
+        double copy_start = MPI_Wtime();
+        if (!status) status = sc26_gpu_direct_solver_copy_solution(solver);
+        download_ms = (MPI_Wtime() - copy_start) * 1000.0;
+        if (download_ms > max_download_ms) max_download_ms = download_ms;
+        MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX,
+                      MPI_COMM_WORLD);
+        status = global_status;
+
+        if (!status)
+            status = sc26_gpu_direct_solver_get_memory_metrics(
+                solver, &memory_metrics);
+        if (memory_metrics.tracked_peak_bytes > local_gpu_tracked_peak)
+            local_gpu_tracked_peak = memory_metrics.tracked_peak_bytes;
+        if (memory_metrics.observed_peak_bytes > local_gpu_observed_peak)
+            local_gpu_observed_peak = memory_metrics.observed_peak_bytes;
+        if (solver) sc26_gpu_direct_solver_destroy(solver);
+        MPI_Allreduce(&status, &global_status, 1, MPI_INT, MPI_MAX,
+                      MPI_COMM_WORLD);
+        status = global_status;
+
+        if (rank == 0 && !status)
+            fprintf(stdout, "TRIAL trial=%d raw_seconds=%.12f\n",
+                    trial, total_ms / 1000.0);
+        if (trial >= warmup_frequency)
+            measured_total_ms += total_ms;
+    }
     {
-        double local_ms = local_total_ms / (double)test_frequency;
-        double local_upload = local_upload_ms;
-        double local_download = local_download_ms;
+        double local_ms = measured_total_ms / (double)test_frequency;
+        double local_upload = max_upload_ms;
+        double local_download = max_download_ms;
         double global_ms = 0.0;
         double global_upload = 0.0;
         double global_download = 0.0;

@@ -1,9 +1,9 @@
 /*
  * PanguLU adapter for the direct-solve test programs.
  *
- * The adapter uploads the matrix and all RHS vectors once, keeps the PanguLU
- * objects alive between repeated rounds, and copies the final solution back to
- * the host after timing has ended.
+ * The adapter uploads the matrix and all RHS vectors for one round, owns a
+ * private PanguLU instance, and copies that round's solution back before the
+ * instance is destroyed.
  */
 #include "product/pangulu_direct_solver.h"
 

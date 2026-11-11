@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Regression tests for the user-facing timing summary."""
 
+import contextlib
+import io
 import importlib.util
 from pathlib import Path
 import statistics
@@ -63,6 +65,28 @@ class SummaryTimingTests(unittest.TestCase):
             )
             result = SUMMARY.summarize_log(path)
             self.assertEqual(result["time_ms"], 123.456)
+
+    def test_main_fails_when_residual_is_not_verified(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T03_q1.log"
+            make_log(path, "diagnostic")
+            path.write_text(
+                path.read_text().replace(
+                    "VERIFICATION relative_l2=1e-9 threshold=1e-8 PASS",
+                    "VERIFICATION relative_l2=2e-8 threshold=1e-8 FAIL",
+                )
+            )
+            with contextlib.redirect_stdout(io.StringIO()):
+                status = SUMMARY.main(["summarize_results.py", str(path)])
+            self.assertEqual(status, 1)
+
+    def test_main_passes_verified_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T03_q1.log"
+            make_log(path, "diagnostic")
+            with contextlib.redirect_stdout(io.StringIO()):
+                status = SUMMARY.main(["summarize_results.py", str(path)])
+            self.assertEqual(status, 0)
 
 
 if __name__ == "__main__":

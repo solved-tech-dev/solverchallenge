@@ -74,7 +74,7 @@ void print_help()
     fprintf(stdout, "matrix.dat:     PETSc binary matrix A (default); Matrix Market .mtx is also accepted\n");
     fprintf(stdout, "vector.dat:     PETSc binary right-hand side b; .rhs is used with MTX matrices\n");
     fprintf(stdout, "read_base:      MTX only, 0-base or 1-base, default 1-base; PETSc is always 0-base\n");
-    fprintf(stdout, "timing:         end-to-end solver time, averaged over 10 runs\n");
+    fprintf(stdout, "timing:         mean of rounds 6-10; every round uses a fresh solve context\n");
     fprintf(stdout, "sys_type:       type of algebraic systems, 0: real, 1: complex; default auto-detect\n");
 }
 

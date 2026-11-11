@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.21)
 project(SolverChallenge26 LANGUAGES C CXX)
 
 include(CTest)
+find_package(Python3 COMPONENTS Interpreter QUIET)
 include(cmake/Dependencies.cmake)
 include(cmake/ProblemProducts.cmake)
 
@@ -208,4 +209,10 @@ if(BUILD_TESTING)
     target_link_libraries(test_csr_sort PRIVATE sc26_headers)
     target_compile_options(test_csr_sort PRIVATE -UNDEBUG)
     add_test(NAME csr_sort COMMAND test_csr_sort)
+    if(Python3_Interpreter_FOUND)
+        add_test(
+            NAME round_isolation
+            COMMAND "${Python3_EXECUTABLE}"
+                    "${PROJECT_SOURCE_DIR}/tests/test_round_isolation.py")
+    endif()
 endif()

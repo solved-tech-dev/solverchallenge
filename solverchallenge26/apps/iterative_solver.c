@@ -116,15 +116,11 @@ int main(int argc, char** argv)
     // Step 2: Solve the linear system
     /* ========================================== */
     if (sys_type == 0) {
-        struct MySolver mysolver;
-        SC26_SOLVER_CREATE(&mysolver, &solver_input);
-
-        /*
-         * The first five rounds warm up the product and the last five rounds
-         * are measured.  Each measured round is timed independently so that
-         * printing solver statistics does not affect the next round.
-         */
+        /* Each round owns a fresh solver context and starts from x = 0. */
         for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            struct MySolver mysolver;
+            memset(x, 0, sizeof(*x) * (size_t)n);
+            SC26_SOLVER_CREATE(&mysolver, &solver_input);
             tt = GetCurrentTime();
             analyse(&mysolver, &solver_input);
             preprocess(&mysolver, &solver_input);
@@ -132,13 +128,15 @@ int main(int argc, char** argv)
             double elapsed = GetCurrentTime() - tt;
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
+            SC26_SOLVER_DESTROY(&mysolver, &solver_input);
         }
-        SC26_SOLVER_DESTROY(&mysolver, &solver_input);
     }
     else {
-        struct MySolver_complex mysolver;
-        SC26_SOLVER_CREATE(&mysolver, &solver_input);
         for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            struct MySolver_complex mysolver;
+            memset(x, 0, sizeof(*x) * (size_t)n);
+            memset(x_im, 0, sizeof(*x_im) * (size_t)n);
+            SC26_SOLVER_CREATE(&mysolver, &solver_input);
             tt = GetCurrentTime();
             analyse_complex(&mysolver, &solver_input);
             preprocess_complex(&mysolver, &solver_input);
@@ -146,8 +144,8 @@ int main(int argc, char** argv)
             double elapsed = GetCurrentTime() - tt;
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
+            SC26_SOLVER_DESTROY(&mysolver, &solver_input);
         }
-        SC26_SOLVER_DESTROY(&mysolver, &solver_input);
     }
 
     fprintf(stdout, "------------------------------------------\n");

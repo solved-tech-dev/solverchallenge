@@ -14,10 +14,9 @@
 
 
 /*
- * This adapter connects the SolverChallenge input buffers to the public
- * XianzhiKrylov C API.  It uploads the matrix and RHS once, keeps the product
- * objects alive for the repeated rounds, and copies the solution back only
- * after the final round.
+ * This adapter connects one SolverChallenge round to the public XianzhiKrylov
+ * C API. It uploads the round inputs, owns all product objects, and copies the
+ * solution back before the round context is destroyed.
  */
 enum {
     SC26_XK_OK = 0,

@@ -154,39 +154,50 @@ int main(int argc, char** argv)
     // Step 2: Solve the linear system
     /* ========================================== */
     if (sys_type == 0) {
-        struct MySolver mysolver;
-        SC26_SOLVER_CREATE(&mysolver, &solver_input);
-        for (int i = 0; i < warmup_frequency; ++i) {
+        double measured_total_ms = 0.0;
+        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            struct MySolver mysolver;
+            memset(x, 0, sizeof(*x) * (size_t)local_n);
+            SC26_SOLVER_CREATE(&mysolver, &solver_input);
+            MPI_Barrier(MPI_COMM_WORLD);
+            tt = MPI_Wtime();
             analyse(&mysolver, &solver_input);
             preprocess(&mysolver, &solver_input);
             iterative_solver(&mysolver, &solver_input);
+            MPI_Barrier(MPI_COMM_WORLD);
+            double elapsed_ms = (MPI_Wtime() - tt) * 1000.0;
+            if (myrank == 0)
+                fprintf(stdout, "TRIAL trial=%d raw_seconds=%.12f\n",
+                        trial, elapsed_ms / 1000.0);
+            SC26_SOLVER_REPORT(&mysolver);
+            SC26_SOLVER_DESTROY(&mysolver, &solver_input);
+            if (trial >= warmup_frequency)
+                measured_total_ms += elapsed_ms;
         }
-        MPI_Barrier(MPI_COMM_WORLD);
-        tt = MPI_Wtime();
-        for (int i = 0; i < test_frequency; ++i) {
-            analyse(&mysolver, &solver_input);
-            preprocess(&mysolver, &solver_input);
-            iterative_solver(&mysolver, &solver_input);
-        }
-        time = (MPI_Wtime() - tt) * 1000.0 / (double)test_frequency;
-        SC26_SOLVER_DESTROY(&mysolver, &solver_input);
+        time = measured_total_ms / (double)test_frequency;
     } else {
-        struct MySolver_complex mysolver;
-        SC26_SOLVER_CREATE(&mysolver, &solver_input);
-        for (int i = 0; i < warmup_frequency; ++i) {
+        double measured_total_ms = 0.0;
+        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+            struct MySolver_complex mysolver;
+            memset(x, 0, sizeof(*x) * (size_t)local_n);
+            memset(x_im, 0, sizeof(*x_im) * (size_t)local_n);
+            SC26_SOLVER_CREATE(&mysolver, &solver_input);
+            MPI_Barrier(MPI_COMM_WORLD);
+            tt = MPI_Wtime();
             analyse_complex(&mysolver, &solver_input);
             preprocess_complex(&mysolver, &solver_input);
             iterative_solver_complex(&mysolver, &solver_input);
+            MPI_Barrier(MPI_COMM_WORLD);
+            double elapsed_ms = (MPI_Wtime() - tt) * 1000.0;
+            if (myrank == 0)
+                fprintf(stdout, "TRIAL trial=%d raw_seconds=%.12f\n",
+                        trial, elapsed_ms / 1000.0);
+            SC26_SOLVER_REPORT(&mysolver);
+            SC26_SOLVER_DESTROY(&mysolver, &solver_input);
+            if (trial >= warmup_frequency)
+                measured_total_ms += elapsed_ms;
         }
-        MPI_Barrier(MPI_COMM_WORLD);
-        tt = MPI_Wtime();
-        for (int i = 0; i < test_frequency; ++i) {
-            analyse_complex(&mysolver, &solver_input);
-            preprocess_complex(&mysolver, &solver_input);
-            iterative_solver_complex(&mysolver, &solver_input);
-        }
-        time = (MPI_Wtime() - tt) * 1000.0 / (double)test_frequency;
-        SC26_SOLVER_DESTROY(&mysolver, &solver_input);
+        time = measured_total_ms / (double)test_frequency;
     }
     {
         double local_time_ms = time;

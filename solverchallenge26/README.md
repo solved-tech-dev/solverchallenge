@@ -402,10 +402,37 @@ preconditioner.
 | [T09](problems/problem09/README.md) | none | PanguLU direct LU | 10 |
 | [T10](problems/problem10/README.md) | none | PanguLU complex direct LU | 10 |
 
+## Official problem constraints
+
+The following requirements are taken from the
+[official SolverChallenge26 rules](https://www.solver-conference.cn/solverchallenge26/index.html#competition).
+The program must satisfy the residual and memory limits; reaching the solver
+tolerance alone is not sufficient.
+
+| Problem | Required numerical check | Memory limit | Other requirements |
+|---|---|---|---|
+| T01 q1 | `||r||2 / ||b||2 < 1e-4` | CPU and GPU each `<= 9 GB` | |
+| T01 q2 | `||r||2 / ||b||2 < 1e-8` | CPU and GPU each `<= 9 GB` | |
+| T02 q1 | `||r||2 / ||b||2 < 1e-6` | none | |
+| T02 q2 | `||r||2 / ||b||2 < 1e-10` | none | |
+| T03 | `||r||2 / ||b||2 < 1e-8` | none | |
+| T04 | `||r||2 / ||b||2 < 1e-8` | none | zero initial guess |
+| T05 | `||r||2 / ||b||2 < 1e-8` | none | |
+| T06 | `||r||2 / ||b||2 < 1e-8` | none | complex system; zero initial guess |
+| T07 | `||r||2 / ||b||2 < 1e-6` | none | zero initial guess |
+| T08 | `||r||max < 1e-8` | none | complex system; ten RHS |
+| T09 | `||r||2 / ||b||2 < 1e-8` | CPU and GPU each `< 100 GB` | ten RHS |
+| T10 | `||r||2 / ||b||2 < 1e-8` | none | complex system; ten RHS |
+
+The final residual check uses the original matrix and RHS after all timed
+rounds. For T01 and T09, CPU and GPU memory are reported separately and must
+both be checked against their limits.
+
 ## Timing
 
-Each program performs five warm-up rounds and five measured rounds. Iterative
-methods run:
+Each program performs ten rounds: five warm-up rounds and five measured
+rounds. Every round creates a fresh solver handle, restores the required zero
+initial guess, and destroys the handle after timing. Iterative methods run:
 
 ```text
 ANALYSIS -> NUMERIC_PREPARE -> SOLVE
@@ -423,19 +450,27 @@ own timer, so printing statistics between rounds is not included.
 
 Input reading, matrix sorting, handle creation, result copying, and
 independent residual verification happen outside these timers.
-Restoring the zero initial guess is included in each solve. Repeated calls
-with the same matrix descriptor reuse the completed analysis and numerical
-preparation; the current RHS is rebound for each solve. Create a new matrix
-descriptor if the matrix values or layout change. For ten RHS, one round
-reuses its factorization across those RHS. Use the `time_ms` field in
-`performance.tsv` as the reported time.
+Restoring the zero initial guess is included in each round.
+
+The organizer's repeated-run rule prohibits carrying application state from
+one round to the next. The harness therefore does not retain a solver handle,
+symbolic structure, numeric factor, workspace contents, scaling data, matrix
+conversion, or previous solution between rounds. Matrix A and the RHS files
+are loaded once as immutable test inputs and may be read again for independent
+verification. Within a single multi-RHS round, an algorithm may reuse its
+factorization across those RHS.
+
+The directory layout, public entry points, and `problem01` through `problem10`
+customization contract remain compatible with the Gitee sample code. Use the
+`time_ms` field in `performance.tsv` as the reported time.
 
 Timers are in `apps/iterative_solver.c`, `apps/iterative_solver_multi.c`, and
 `apps/direct_solver_multi.c`. Library statistics follow each `TRIAL` line.
 The final independent check uses the original A and b; single-RHS iterative
 runs use binary128 arithmetic and return failure if their required residual
 is not met. T08 checks complex absolute maximum residual for every RHS;
-T09 and T10 check relative L2 residual for every RHS.
+T09 and T10 check relative L2 residual for every RHS. These calculations are
+outside all measured intervals.
 
 ## Product API locations
 
