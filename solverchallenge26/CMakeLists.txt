@@ -103,6 +103,10 @@ target_link_libraries(sc26_io PUBLIC sc26_headers m)
 
 add_library(sc26_diagnostics STATIC src/diagnostics.c)
 target_link_libraries(sc26_diagnostics PUBLIC sc26_headers m)
+find_package(OpenMP QUIET COMPONENTS C)
+if(OpenMP_C_FOUND)
+    target_link_libraries(sc26_diagnostics PUBLIC OpenMP::OpenMP_C)
+endif()
 
 sc26_configure_float128(sc26_diagnostics)
 
@@ -205,6 +209,11 @@ if(SC26_BUILD_MPI)
 endif()
 
 if(BUILD_TESTING)
+    if(OpenMP_C_FOUND AND SC26_ENABLE_FLOAT128)
+        add_executable(test_residual_parallel tests/residual_parallel.c)
+        target_link_libraries(test_residual_parallel PRIVATE sc26_diagnostics)
+        add_test(NAME residual_parallel COMMAND test_residual_parallel)
+    endif()
     add_executable(test_csr_sort tests/csr_sort.c src/csr_sort.c)
     target_link_libraries(test_csr_sort PRIVATE sc26_headers)
     target_compile_options(test_csr_sort PRIVATE -UNDEBUG)

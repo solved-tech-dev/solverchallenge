@@ -1247,6 +1247,9 @@ static void spmv_q_xq(const int n, const int *row_ptr, const int *col_idx,
                       const double *val, const __float128 *x, __float128 *y)
 {
     int i;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
     for (i = 0; i < n; ++i) {
         __float128 sum = 0.0Q;
         __float128 compensation = 0.0Q;
@@ -1268,6 +1271,9 @@ static void spmv_complex_q_xq(const int n, const int *row_ptr, const int *col_id
                               __float128 *y, __float128 *yi)
 {
     int i;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
     for (i = 0; i < n; ++i) {
         __float128 sum_re = 0.0Q, sum_im = 0.0Q;
         __float128 compensation_re = 0.0Q, compensation_im = 0.0Q;
