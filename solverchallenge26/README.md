@@ -31,9 +31,10 @@ login node.
 
 ### Tested BW1000 cluster
 
-The tested competition cluster runs Sugon OS 8.9 with glibc 2.28. Its DTK
-26.04 installation is loaded on compute nodes with the
-`compiler/dtk/26.04` module. A typical one-GPU allocation is:
+The tested competition cluster runs Sugon OS 8.9 with glibc 2.28. Compute
+nodes provide DTK 25.04.4 and 26.04 modules. Load the version named by the
+downloaded package; the published 26.46 LinglongAMG BW1000 package requires
+DTK 26.04. A typical one-GPU allocation is:
 
 ```bash
 salloc \
@@ -377,7 +378,9 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 
 ## Reference Environment
 
-The programs target one BW1000 DCU. The checked packages use DTK26.04.
+The programs target one BW1000 DCU. Select the DTK version named by the
+product package. The published 26.46 LinglongAMG package validated with this
+checkout uses DTK26.04.
 The scripts select 4, 8, or 16 CPU threads according to the problem.
 Per-problem runtime settings are in `problems/problemNN/config/runtime*.env`.
 Each problem directory also has a short README with its solver and
@@ -445,8 +448,9 @@ T09 and T10 check relative L2 residual for every RHS.
 
 - `Permission denied`: run `chmod +x scripts/*.sh`.
 - `module: command not found`: run `source /etc/profile.d/modules.sh`.
-- `Unable to locate a modulefile`: load `compiler/dtk/26.04` on a compute
-  node inside the Slurm allocation; the login node may not expose that module.
+- `Unable to locate a modulefile`: load the DTK module named in the selected
+  product package on a compute node inside the Slurm allocation; the login
+  node may not expose compiler modules.
 - `C compiler is not able to compile a simple test program` with
   `No space left on device`: set `TMPDIR` below `/work2`, remove only the
   failed `build/problemNN` directory, and rerun the build.
@@ -463,10 +467,17 @@ T09 and T10 check relative L2 residual for every RHS.
   corresponding package root.
 - License expired or machine mismatch: request a key for the current GPU
   allocation; do not reuse a key issued for another card.
-- `BATCH_ERROR out of memory` in T08: use the current 26.45 XianzhiKrylov
+- `BATCH_ERROR out of memory` in T08: use the current 26.46 XianzhiKrylov
   package. Do not reduce `batch`; that was not a numerically valid workaround.
+- T04 numeric preparation fails: verify that LinglongAMG is the current
+  26.46 package for DTK26.04. Older builds are not compatible with the
+  published T04 configuration.
 - Shared library error: load the vendor runtime or set
   `SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env`.
+- `Permission denied` when reading the competition data directory: ask the
+  cluster administrator for access to the competition data, or pass an
+  existing readable mirror through `DATA_ROOT`. Do not copy the full data set
+  into the repository.
 - Matrix or RHS is missing: check `DATA_ROOT`.
 - GPU is missing: run the command inside an interactive GPU allocation.
 - A case fails: open its log with the commands below.

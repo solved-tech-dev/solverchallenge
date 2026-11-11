@@ -2,7 +2,6 @@
   "extended_solver": {
     "method": "bicgstab_amg",
     "provider": "linglongamg",
-    "integration": "dynamic",
     "library_path": "@LINGLONGAMG_LIBRARY@",
     "config_path": "@LINGLONGAMG_CONFIG@",
     "max_iterations": 200,

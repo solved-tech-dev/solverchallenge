@@ -2,13 +2,13 @@
   "extended_solver": {
     "method": "bicgstab_hybrid30",
     "provider": "block_jacobi3",
-    "max_iterations": 1000,
-    "relative_tolerance": 1e-07,
-    "grid": 32768,
-    "check_interval": 8,
+    "max_iterations": 28,
+    "relative_tolerance": 1e-06,
+    "grid": 28672,
+    "check_interval": 29,
     "cache_rank": 2,
     "tile_coeffs": true,
-    "reduction_blocks": 256,
-    "spmv_threads": 128
+    "reduction_blocks": 240,
+    "spmv_threads": 256
   }
 }

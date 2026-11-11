@@ -4,7 +4,7 @@
     "provider": "linglongamg",
     "library_path": "@LINGLONGAMG_LIBRARY@",
     "config_path": "@LINGLONGAMG_CONFIG@",
-    "restart": 2,
+    "restart": 3,
     "max_cycles": 4,
     "relative_tolerance": 0.0001,
     "spmv_width": 4,
