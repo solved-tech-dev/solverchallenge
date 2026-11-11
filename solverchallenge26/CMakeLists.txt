@@ -218,5 +218,9 @@ if(BUILD_TESTING)
             NAME summarize_results
             COMMAND "${Python3_EXECUTABLE}"
                     "${PROJECT_SOURCE_DIR}/tests/test_summarize_results.py")
+        add_test(
+            NAME independent_rounds
+            COMMAND "${Python3_EXECUTABLE}"
+                    "${PROJECT_SOURCE_DIR}/tests/test_independent_rounds.py")
     endif()
 endif()

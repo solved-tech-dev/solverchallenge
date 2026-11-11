@@ -1,6 +1,7 @@
 #include "multi_rhs_common.h"
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/solver_api.h"
+#include "solverchallenge26/rounds.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +46,7 @@ int main(int argc, char** argv)
     sc26_multi_input(&input, &system);
 
     if (is_complex) {
-        for (int trial = 0; trial < SC26_TOTAL_ROUNDS; ++trial) {
+        for (int trial = sc26_first_round(); trial < sc26_round_limit(); ++trial) {
             struct MySolver_complex solver;
             memset(system.x_all, 0,
                    sizeof(*system.x_all) * (size_t)system.n * (size_t)system.rhs_count);
@@ -62,7 +63,7 @@ int main(int argc, char** argv)
             SC26_SOLVER_DESTROY(&solver, &input);
         }
     } else {
-        for (int trial = 0; trial < SC26_TOTAL_ROUNDS; ++trial) {
+        for (int trial = sc26_first_round(); trial < sc26_round_limit(); ++trial) {
             struct MySolver solver;
             memset(system.x_all, 0,
                    sizeof(*system.x_all) * (size_t)system.n * (size_t)system.rhs_count);

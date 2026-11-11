@@ -170,7 +170,8 @@ fi
 # Keep the complete solver output for diagnostics, and create the compact
 # performance table immediately after the run.
 solver_status=0
-"${runner[@]}" "$executable" "${program_args[@]}" 2>&1 |
+python3 "${script_dir}/run_independent_rounds.py" \
+    "${runner[@]}" "$executable" "${program_args[@]}" 2>&1 |
     tee "$output/run.log" || solver_status=$?
 
 summary_status=0

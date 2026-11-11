@@ -430,9 +430,10 @@ both be checked against their limits.
 
 ## Timing
 
-Each program performs ten rounds: five warm-up rounds and five measured
-rounds. Every round creates a fresh solver handle, restores the required zero
-initial guess, and destroys the handle after timing. Iterative methods run:
+The run scripts start ten independent processes: five warm-up rounds and five
+measured rounds. Each process uses its own working and temporary directories,
+creates a fresh solver handle, restores the required zero initial guess, and
+destroys the handle after timing. Iterative methods run:
 
 ```text
 ANALYSIS -> NUMERIC_PREPARE -> SOLVE
@@ -450,14 +451,16 @@ own timer, so printing statistics between rounds is not included.
 
 Input reading, matrix sorting, handle creation, result copying, and
 independent residual verification happen outside these timers.
-Restoring the zero initial guess is included in each round.
+The required zero initial guess is restored before the timer starts.
 
 The organizer's repeated-run rule prohibits carrying application state from
 one round to the next. The harness therefore does not retain a solver handle,
 symbolic structure, numeric factor, workspace contents, scaling data, matrix
-conversion, or previous solution between rounds. Matrix A and the RHS files
-are loaded once as immutable test inputs and may be read again for independent
-verification. Within a single multi-RHS round, an algorithm may reuse its
+conversion, or previous solution between rounds. Each process loads the
+immutable matrix A and RHS files before timing and independently verifies its
+own solution after timing. Its log and solution are in `rounds/round-00/`
+through `rounds/round-09/` under the problem's output directory. Within a
+single multi-RHS round, an algorithm may reuse its
 factorization across those RHS.
 
 The directory layout, public entry points, and `problem01` through `problem10`

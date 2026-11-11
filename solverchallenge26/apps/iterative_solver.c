@@ -13,6 +13,7 @@
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/system_loader.h"
 #include "solverchallenge26/solver_api.h"
+#include "solverchallenge26/rounds.h"
 
 int main(int argc, char** argv)
 {
@@ -28,8 +29,6 @@ int main(int argc, char** argv)
     char* filename_matrix;       // the filename of matrix A
     char* filename_b;            // the filename of right-hand side vector b
     int   read_matrix_base = 1;  // 0-base or 1-base, default 1-base
-    int   test_frequency   = 5; // run code frequency
-    int   warmup_frequency = 5; // untimed warm-up runs required by the report protocol
     int   sys_type         = 0;  // type of algebraic systems, 0: real, 1: complex; default 0
 
     /* ========================================== */
@@ -117,7 +116,7 @@ int main(int argc, char** argv)
     /* ========================================== */
     if (sys_type == 0) {
         /* Each round owns a fresh solver context and starts from x = 0. */
-        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+        for (int trial = sc26_first_round(); trial < sc26_round_limit(); ++trial) {
             struct MySolver mysolver;
             memset(x, 0, sizeof(*x) * (size_t)n);
             SC26_SOLVER_CREATE(&mysolver, &solver_input);
@@ -132,7 +131,7 @@ int main(int argc, char** argv)
         }
     }
     else {
-        for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
+        for (int trial = sc26_first_round(); trial < sc26_round_limit(); ++trial) {
             struct MySolver_complex mysolver;
             memset(x, 0, sizeof(*x) * (size_t)n);
             memset(x_im, 0, sizeof(*x_im) * (size_t)n);
