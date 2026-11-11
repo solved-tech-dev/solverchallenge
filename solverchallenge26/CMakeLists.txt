@@ -214,5 +214,9 @@ if(BUILD_TESTING)
             NAME round_isolation
             COMMAND "${Python3_EXECUTABLE}"
                     "${PROJECT_SOURCE_DIR}/tests/test_round_isolation.py")
+        add_test(
+            NAME summarize_results
+            COMMAND "${Python3_EXECUTABLE}"
+                    "${PROJECT_SOURCE_DIR}/tests/test_summarize_results.py")
     endif()
 endif()
