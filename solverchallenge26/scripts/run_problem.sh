@@ -142,6 +142,16 @@ output="$(realpath -- "$output")"
 echo "Output: $output"
 cd "$output"
 
+if [[ -n "${SC26_HIP_RUNTIME_LIBRARY:-}" ]]; then
+    if [[ ! -f "$SC26_HIP_RUNTIME_LIBRARY" ]]; then
+        echo "HIP runtime library missing: $SC26_HIP_RUNTIME_LIBRARY" >&2
+        exit 2
+    fi
+    hip_lib_dir="$(dirname "$(realpath -e -- "$SC26_HIP_RUNTIME_LIBRARY")")"
+    dtk_root="$(dirname "$(dirname "$hip_lib_dir")")"
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$hip_lib_dir:$dtk_root/lib:$dtk_root/lib64"
+fi
+
 runner=()
 if [[ -n "${SC26_COMPAT_ROOT:-}" ]]; then
     compat="$(realpath -e -- "$SC26_COMPAT_ROOT")"
@@ -149,10 +159,11 @@ if [[ -n "${SC26_COMPAT_ROOT:-}" ]]; then
         echo "Compatibility loader missing: $compat/ld-linux-x86-64.so.2" >&2
         exit 2
     fi
+    library_path="${LD_LIBRARY_PATH:-}:$compat"
     runner=(
         "$compat/ld-linux-x86-64.so.2"
         --library-path
-        "${LD_LIBRARY_PATH:-}:$compat"
+        "$library_path"
     )
 fi
 

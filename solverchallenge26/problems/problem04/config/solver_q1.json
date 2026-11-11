@@ -6,7 +6,8 @@
     "config_path": "@LINGLONGAMG_CONFIG@",
     "max_iterations": 400,
     "relative_tolerance": 1e-08,
-    "host_matrix_setup": true,
-    "pcg_row_width": 16
+    "host_matrix_setup": false,
+    "pcg_row_width": 16,
+    "pcg_amg_fusion": 3
   }
 }

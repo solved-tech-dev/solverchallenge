@@ -2,11 +2,11 @@
   "config_version": 2,
   "setup": {
     "max_levels": 50,
-    "min_coarse_size": 2,
+    "min_coarse_size": 256,
     "strong_threshold": 0.3,
     "presweeps": 1,
     "postsweeps": 1,
-    "coarsest_sweeps": 1,
+    "coarsest_sweeps": 2,
     "jacobi_omega": 0.875,
     "interp_max_elements": 3,
     "rap_method": "onestep",

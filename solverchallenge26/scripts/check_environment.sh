@@ -150,6 +150,7 @@ printf 'Checking problems: %s\n\n' "${selected_problems[*]}"
 check_command "cmake" "CMake"
 check_command "cc" "C compiler"
 check_command "c++" "C++ compiler"
+check_command "hipcc" "HIP compiler"
 check_command "python3" "Python 3"
 check_command "realpath" "realpath"
 

@@ -4,7 +4,7 @@
     "max_levels": 50,
     "min_coarse_size": 512,
     "strong_threshold": 0.3,
-    "presweeps": 2,
+    "presweeps": 1,
     "postsweeps": 2,
     "coarsest_sweeps": 2,
     "jacobi_omega": 1,

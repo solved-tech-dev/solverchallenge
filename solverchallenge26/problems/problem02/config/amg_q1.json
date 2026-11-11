@@ -2,7 +2,7 @@
   "config_version": 2,
   "setup": {
     "max_levels": 50,
-    "min_coarse_size": 128,
+    "min_coarse_size": 256,
     "strong_threshold": 0.3,
     "presweeps": 1,
     "postsweeps": 1,
