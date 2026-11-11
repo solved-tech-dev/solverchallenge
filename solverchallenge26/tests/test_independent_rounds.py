@@ -39,17 +39,28 @@ class IndependentRoundsTests(unittest.TestCase):
                 self.assertEqual(destination.read_text(), "test license placement\n")
                 self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
 
-    def run_workflow(self, directory, failure=None):
+    def run_workflow(self, directory, failure=None, pin=False):
         driver = directory / "driver.py"
         driver.write_text(
-            "import json, os\n"
+            "import json, os, time\n"
             "from pathlib import Path\n"
             "trial = int(os.environ['SC26_TRIAL_INDEX'])\n"
+            f"pin = {pin!r}\n"
+            "if pin:\n"
+            "    allowed = os.sched_getaffinity(0)\n"
+            "    os.sched_setaffinity(0, {min(allowed)})\n"
             "assert not Path('state').exists()\n"
             "Path('state').write_text('previous solve')\n"
             "Path('identity.json').write_text(json.dumps([os.getpid(), os.getcwd(), os.environ['TMPDIR']]))\n"
             "print(f'TRIAL trial={trial} raw_seconds={trial + 1}')\n"
             "print('XianzhiKrylov status=1 converged=1 iterations=7')\n"
+            "if pin:\n"
+            "    assert len(os.sched_getaffinity(0)) == 1\n"
+            "    print('Total memory usage: 1.0 MB', flush=True)\n"
+            "    for attempt in range(300):\n"
+            "        if os.sched_getaffinity(0) == allowed: break\n"
+            "        time.sleep(0.01)\n"
+            "    assert os.sched_getaffinity(0) == allowed\n"
             f"failed = trial == {failure!r}\n"
             "print('VERIFICATION relative_l2=1e-9 threshold=1e-8 ' + ('FAIL' if failed else 'PASS'))\n"
             "raise SystemExit(1 if failed else 0)\n"
@@ -73,6 +84,15 @@ class IndependentRoundsTests(unittest.TestCase):
             identities = [json.loads(path.read_text()) for path in directory.glob("rounds/*/identity.json")]
             for column in range(3):
                 self.assertEqual(len({row[column] for row in identities}), 10)
+
+    def test_cpu_binding_is_restored_after_timing(self):
+        import os
+        if not hasattr(os, "sched_getaffinity") or len(os.sched_getaffinity(0)) < 2:
+            self.skipTest("requires at least two available CPUs")
+        with tempfile.TemporaryDirectory() as temporary:
+            process, result = self.run_workflow(Path(temporary), pin=True)
+            self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+            self.assertEqual(result["status"], "PASS")
 
     def test_earlier_failed_verification_is_not_hidden(self):
         with tempfile.TemporaryDirectory() as temporary:

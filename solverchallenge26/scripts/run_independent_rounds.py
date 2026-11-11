@@ -7,7 +7,18 @@ import subprocess
 import sys
 
 
+def restore_verification_affinity(pid, allowed):
+    """Undo vendor thread binding only after the solver timer has stopped."""
+    for thread in Path(f"/proc/{pid}/task").glob("*"):
+        try:
+            os.sched_setaffinity(int(thread.name), allowed)
+        except (OSError, ValueError):
+            # Exiting worker threads need no further adjustment.
+            continue
+
+
 def run_rounds(command, output):
+    allowed = os.sched_getaffinity(0) if hasattr(os, "sched_getaffinity") else None
     for trial in range(10):
         directory = output / "rounds" / f"round-{trial:02d}"
         directory.mkdir(parents=True, exist_ok=False)
@@ -32,6 +43,10 @@ def run_rounds(command, output):
             for line in process.stdout:
                 log.write(line)
                 log.flush()
+                # All supported drivers emit this line after timing and
+                # destroying the solver, immediately before CPU verification.
+                if allowed and line.startswith(b"Total memory usage:"):
+                    restore_verification_affinity(process.pid, allowed)
                 sys.stdout.buffer.write(line)
                 sys.stdout.buffer.flush()
             status = process.wait()
