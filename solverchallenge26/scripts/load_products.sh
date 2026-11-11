@@ -49,6 +49,46 @@ for candidate in "${SC26_LOCAL_ROOT}"/licenses/pangulu*.key; do
     fi
 done
 
+# Current product packages discover licenses inside their own SDK directory.
+# Keep local/licenses/ as the user's download location and install private
+# copies there before starting a product program.
+sc26_install_license()
+{
+    local license_path="$1"
+    local product_root="$2"
+    local license_dir
+    local destination
+    local temporary
+
+    [[ -n "$license_path" && -f "$license_path" && -d "$product_root" ]] || return 0
+    license_dir="$product_root/licenses"
+    destination="$license_dir/$(basename "$license_path")"
+    if [[ -f "$destination" ]] && cmp -s "$license_path" "$destination"; then
+        return 0
+    fi
+    if ! mkdir -p "$license_dir"; then
+        echo "Cannot install license in $product_root; use a writable copy of the product package." >&2
+        return 2
+    fi
+    temporary="$(mktemp "$license_dir/.install-XXXXXX")" || return 2
+    if ! cp "$license_path" "$temporary" || ! chmod 600 "$temporary" ||
+       ! mv -f "$temporary" "$destination"; then
+        rm -f "$temporary"
+        echo "Cannot install license: $destination" >&2
+        return 2
+    fi
+}
+
+sc26_install_license \
+    "${XIANZHIKRYLOV_LICENSE_PATHS:-}" \
+    "${XIANZHIKRYLOV_ROOT:-${SC26_LOCAL_ROOT}/packages/xianzhikrylov}" || return $?
+sc26_install_license \
+    "${LINGLONGAMG_LICENSE_PATHS:-}" \
+    "${SC26_LOCAL_ROOT}/packages/linglongamg" || return $?
+sc26_install_license \
+    "${PANGULU_LICENSE_PATHS:-}" \
+    "${PANGULU_ROOT:-${SC26_LOCAL_ROOT}/packages/pangulu}" || return $?
+
 # Make product libraries visible to the generated test programs.
 for library_dir in \
     "${XIANZHIKRYLOV_ROOT:-${SC26_LOCAL_ROOT}/packages/xianzhikrylov}/lib" \

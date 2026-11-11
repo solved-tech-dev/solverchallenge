@@ -213,22 +213,15 @@ The scripts load these package directories automatically.
 
 ### Step 6: Put the licenses in `local/licenses`
 
-Copy one valid license for each required product into `local/licenses`.
-Keep the downloaded file names. Also place a copy in each package root:
+Copy one valid license for each required product into `local/licenses` and
+keep the downloaded file names. Keep only the current key for each product
+in that directory. Each key must match the allocated GPU and remain valid
+for the whole run.
 
-```bash
-cp local/licenses/pangulu-*.key local/packages/pangulu/license.key
-cp local/licenses/linglongamg-*.key local/packages/linglongamg/license.key
-cp local/licenses/xianzhikrylov-*.key local/packages/xianzhikrylov/license.key
-```
-
-Keep only the current key for each product in `local/licenses` before running
-these commands. Each key must match the allocated GPU and remain valid for
-the whole run.
-
-The files in `local/licenses` are used by `check_environment.sh`. The product
-libraries read the copies named `license.key` inside their package roots.
-After renewing a license, replace both copies and remove stale keys.
+The environment, build, and run scripts automatically copy the selected keys
+into the corresponding SDK's `licenses/` directory, which the product reads.
+After renewing a license, replace its file in `local/licenses`; the next
+command installs the new copy. Use product directories that you can write to.
 
 ```bash
 ls -l local/licenses
@@ -501,8 +494,8 @@ outside all measured intervals.
 - Package archive is missing: check `local/downloads`.
 - Package file is missing: check `local/packages`.
 - Custom package paths are needed: set them in `configs/local.env`.
-- `license.key` not found: place the key both in `local/licenses` and in the
-  corresponding package root.
+- License not found: place the key in `local/licenses` and make sure the
+  corresponding product package directory is writable.
 - License expired or machine mismatch: request a key for the current GPU
   allocation; do not reuse a key issued for another card.
 - `BATCH_ERROR out of memory` in T08: use the current 26.46 XianzhiKrylov

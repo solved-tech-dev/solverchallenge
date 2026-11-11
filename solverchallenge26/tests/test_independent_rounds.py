@@ -17,6 +17,28 @@ SPEC.loader.exec_module(SUMMARY)
 
 
 class IndependentRoundsTests(unittest.TestCase):
+    def test_product_licenses_are_installed_as_private_regular_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for product in ("pangulu", "linglongamg", "xianzhikrylov"):
+                (directory / "packages" / product).mkdir(parents=True)
+                source = directory / "licenses" / f"{product}-test.key"
+                source.parent.mkdir(exist_ok=True)
+                source.write_text("test license placement\n")
+            command = ["bash", "-c", 'source "$1"', "bash", str(ROOT / "scripts/load_products.sh")]
+            import os
+            environment = os.environ.copy()
+            environment["SC26_LOCAL_ROOT"] = str(directory)
+            for name in ("PANGULU", "LINGLONGAMG", "XIANZHIKRYLOV"):
+                environment.pop(f"{name}_LICENSE_PATHS", None)
+                environment.pop(f"{name}_ROOT", None)
+            subprocess.run(command, env=environment, check=True)
+            for product in ("pangulu", "linglongamg", "xianzhikrylov"):
+                destination = directory / "packages" / product / "licenses" / f"{product}-test.key"
+                self.assertFalse(destination.is_symlink())
+                self.assertEqual(destination.read_text(), "test license placement\n")
+                self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
+
     def run_workflow(self, directory, failure=None):
         driver = directory / "driver.py"
         driver.write_text(
