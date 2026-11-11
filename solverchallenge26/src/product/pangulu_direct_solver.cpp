@@ -34,6 +34,7 @@ struct HipRuntime {
     int (*memset_fn)(void*, int, std::size_t)              = nullptr;
     int (*set_device_fn)(int)                              = nullptr;
     int (*synchronize_fn)()                                = nullptr;
+    int (*mem_get_info_fn)(std::size_t*, std::size_t*)     = nullptr;
 };
 
 HipRuntime hip_runtime;
@@ -76,6 +77,7 @@ int load_hip_runtime()
     SC26_LOAD_HIP(memset_fn, "Memset");
     SC26_LOAD_HIP(set_device_fn, "SetDevice");
     SC26_LOAD_HIP(synchronize_fn, "DeviceSynchronize");
+    SC26_LOAD_HIP(mem_get_info_fn, "MemGetInfo");
 #undef SC26_LOAD_HIP
     if (hip_runtime.set_device_fn(0) != 0) {
         return -1;
@@ -154,6 +156,9 @@ struct sc26_pangulu_direct_solver {
     int64_t                 nnz             = 0;
     int64_t                 rhs_count       = 0;
     int                     components      = 1;
+    std::size_t             baseline_free   = 0;
+    std::size_t             minimum_free    = 0;
+    std::size_t             device_total    = 0;
 
     ~sc26_pangulu_direct_solver()
     {
@@ -182,6 +187,19 @@ static int fail(const char* operation, int status)
 {
     std::fprintf(stderr, "%s failed: %d\n", operation, status);
     return status ? status : -1;
+}
+
+static void sample_device_memory(sc26_pangulu_direct_solver* solver)
+{
+    if (!solver || !solver->baseline_free) {
+        return;
+    }
+    std::size_t free_bytes = 0;
+    std::size_t total_bytes = 0;
+    if (hip_runtime.mem_get_info_fn(&free_bytes, &total_bytes) == 0 &&
+        free_bytes < solver->minimum_free) {
+        solver->minimum_free = free_bytes;
+    }
 }
 
 /*
@@ -262,6 +280,12 @@ extern "C" int sc26_pangulu_direct_solver_create(sc26_pangulu_direct_solver** so
     if (load_hip_runtime()) {
         return fail("hipSetDevice", 1);
     }
+    if (hip_runtime.mem_get_info_fn(&created->baseline_free,
+                                    &created->device_total) != 0) {
+        created->baseline_free = 0;
+        created->device_total  = 0;
+    }
+    created->minimum_free = created->baseline_free;
     const std::uint64_t value_count  = std::uint64_t(created->nnz) * std::uint64_t(created->components);
     const std::uint64_t vector_count = std::uint64_t(created->n) * std::uint64_t(created->rhs_count) * std::uint64_t(created->components);
     if (hip_alloc((void**)&created->row_offsets, (created->n + 1) * sizeof(*created->row_offsets)) != 0 ||
@@ -327,9 +351,11 @@ extern "C" int sc26_pangulu_direct_solver_analysis(sc26_pangulu_direct_solver* s
     if (!solver) {
         return fail("PanguLU analysis", 1);
     }
-    return pangulu_execute(solver->handle, PANGULU_PHASE_ANALYSIS, solver->matrix, nullptr, nullptr) == PANGULU_STATUS_SUCCESS
-               ? 0
-               : fail("pangulu_execute(ANALYSIS)", 1);
+    if (pangulu_execute(solver->handle, PANGULU_PHASE_ANALYSIS, solver->matrix, nullptr, nullptr) != PANGULU_STATUS_SUCCESS) {
+        return fail("pangulu_execute(ANALYSIS)", 1);
+    }
+    sample_device_memory(solver);
+    return 0;
 }
 
 /* Run the numeric factorization phase. */
@@ -338,9 +364,11 @@ extern "C" int sc26_pangulu_direct_solver_factorize(sc26_pangulu_direct_solver* 
     if (!solver) {
         return fail("PanguLU factorization", 1);
     }
-    return pangulu_execute(solver->handle, PANGULU_PHASE_NUMERIC_FACTORISATION, solver->matrix, nullptr, nullptr) == PANGULU_STATUS_SUCCESS
-               ? 0
-               : fail("pangulu_execute(NUMERIC_FACTORISATION)", 1);
+    if (pangulu_execute(solver->handle, PANGULU_PHASE_NUMERIC_FACTORISATION, solver->matrix, nullptr, nullptr) != PANGULU_STATUS_SUCCESS) {
+        return fail("pangulu_execute(NUMERIC_FACTORISATION)", 1);
+    }
+    sample_device_memory(solver);
+    return 0;
 }
 
 /* Run the solve phase and wait for device completion before returning. */
@@ -354,6 +382,7 @@ extern "C" int sc26_pangulu_direct_solver_solve(sc26_pangulu_direct_solver* solv
     if (hip_runtime.synchronize_fn() != 0) {
         return fail("PanguLU solve synchronization", 1);
     }
+    sample_device_memory(solver);
     return 0;
 }
 
@@ -397,6 +426,16 @@ extern "C" int sc26_pangulu_direct_solver_finish(sc26_pangulu_direct_solver* sol
 {
     if (!solver) {
         return fail("PanguLU finish", 1);
+    }
+    sample_device_memory(solver);
+    if (solver->baseline_free) {
+        const std::size_t used_bytes = solver->baseline_free > solver->minimum_free
+                                           ? solver->baseline_free - solver->minimum_free
+                                           : 0;
+        std::printf("GPU memory usage:                   %12.4f MB\n",
+                    static_cast<double>(used_bytes) / (1024.0 * 1024.0));
+        std::printf("GPU total memory:                   %12.4f MB\n",
+                    static_cast<double>(solver->device_total) / (1024.0 * 1024.0));
     }
     const int status = copy_solution_to_host(solver);
     sc26_pangulu_direct_solver_destroy(solver);
