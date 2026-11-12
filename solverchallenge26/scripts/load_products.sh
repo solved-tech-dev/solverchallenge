@@ -11,6 +11,51 @@ if [[ -f "${SC26_REPO_ROOT}/configs/local.env" ]]; then
     source "${SC26_REPO_ROOT}/configs/local.env"
 fi
 
+# Keep compiler temporary files on writable storage.  Some cluster accounts
+# cannot create /work2/${USER}, and the system /tmp may be too small for CMake
+# feature tests and HIP compilation.
+sc26_select_tmpdir()
+{
+    local configured_tmpdir="${TMPDIR:-}"
+    local candidate
+    local candidates=()
+
+    if [[ -n "$configured_tmpdir" &&
+          -d "$configured_tmpdir" &&
+          -w "$configured_tmpdir" ]]; then
+        return 0
+    fi
+
+    if [[ -n "${USER:-}" ]]; then
+        candidates+=("/work2/${USER}/tmp/solverchallenge26")
+    fi
+    candidates+=(
+        "${SC26_REPO_ROOT}/local/tmp/solverchallenge26"
+    )
+    if [[ -n "${HOME:-}" ]]; then
+        candidates+=("${HOME}/sc26-work/tmp/solverchallenge26")
+    fi
+
+    for candidate in "${candidates[@]}"; do
+        if mkdir -p "$candidate" 2>/dev/null &&
+           [[ -d "$candidate" && -w "$candidate" ]]; then
+            if [[ -n "$configured_tmpdir" ]]; then
+                echo "TMPDIR is not writable; using $candidate" >&2
+            fi
+            export TMPDIR="$candidate"
+            return 0
+        fi
+    done
+
+    if [[ -n "$configured_tmpdir" ]]; then
+        echo "TMPDIR is not writable: $configured_tmpdir" >&2
+    else
+        echo "No writable compiler temporary directory was found" >&2
+    fi
+}
+
+sc26_select_tmpdir
+
 # Locate product packages extracted under the standard local/ layout.
 if [[ -z "${XIANZHIKRYLOV_ROOT:-}" &&
       -d "${SC26_LOCAL_ROOT}/packages/xianzhikrylov" ]]; then

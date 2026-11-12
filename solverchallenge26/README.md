@@ -59,7 +59,11 @@ source /etc/profile.d/modules.sh
 module load compiler/dtk/26.04
 command -v hipcc
 
-export WORK_ROOT="/work2/${USER}"
+if [[ -d "/work2/${USER}" && -w "/work2/${USER}" ]]; then
+  export WORK_ROOT="/work2/${USER}"
+else
+  export WORK_ROOT="${HOME}/sc26-work"
+fi
 export TMPDIR="${WORK_ROOT}/tmp/solverchallenge26"
 mkdir -p "${WORK_ROOT}" "${TMPDIR}"
 
@@ -68,10 +72,12 @@ git clone https://github.com/solved-tech-dev/solverchallenge.git \
 cd "${WORK_ROOT}/solverchallenge/solverchallenge26"
 ```
 
-Use cluster work storage rather than the login-node home directory or
-`/tmp`. The tested cluster has a small `/tmp`; exhausting it can make CMake
-report the misleading error `C compiler is not able to compile a simple test
-program`.
+Use cluster work storage when your account can write to it; otherwise use
+your home directory as shown above. The tested cluster has a small `/tmp`;
+exhausting it can make CMake report the misleading error `C compiler is not
+able to compile a simple test program`. The build and run scripts also select
+a writable fallback under the project's `local/tmp` directory when `TMPDIR`
+is unset or invalid.
 
 The required products are:
 
@@ -106,7 +112,7 @@ the public SolverChallenge26 template.
 ### Step 1: Get the project
 
 If you followed the tested BW1000 cluster block above, the repository is
-already under `/work2/${USER}`; skip the clone command in this step.
+already under `${WORK_ROOT}`; skip the clone command in this step.
 
 If Git is available, run:
 
@@ -468,8 +474,9 @@ outside all measured intervals.
   product package on a compute node inside the Slurm allocation; the login
   node may not expose compiler modules.
 - `C compiler is not able to compile a simple test program` with
-  `No space left on device`: set `TMPDIR` below `/work2`, remove only the
-  failed `build/problemNN` directory, and rerun the build.
+  `No space left on device`: set `TMPDIR` to a writable path with sufficient
+  space, remove only the failed `build/problemNN` directory, and rerun the
+  build.
 - `GLIBC_2.29 not found` or `GLIBC_2.35 not found`: configure the complete
   compatibility runtime through `SC26_COMPAT_ROOT`.
 - `libmsgpackc.so.2: cannot open shared object file`: add the library to the
