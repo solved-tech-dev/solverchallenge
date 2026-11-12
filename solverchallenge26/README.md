@@ -395,32 +395,6 @@ preconditioner.
 | [T09](problems/problem09/README.md) | none | PanguLU direct LU | 10 |
 | [T10](problems/problem10/README.md) | none | PanguLU complex direct LU | 10 |
 
-## Official problem constraints
-
-The following requirements are taken from the
-[official SolverChallenge26 rules](https://www.solver-conference.cn/solverchallenge26/index.html#competition).
-The program must satisfy the residual and memory limits; reaching the solver
-tolerance alone is not sufficient.
-
-| Problem | Required numerical check | Memory limit | Other requirements |
-|---|---|---|---|
-| T01 q1 | `||r||2 / ||b||2 < 1e-4` | CPU and GPU each `<= 9 GB` | |
-| T01 q2 | `||r||2 / ||b||2 < 1e-8` | CPU and GPU each `<= 9 GB` | |
-| T02 q1 | `||r||2 / ||b||2 < 1e-6` | none | |
-| T02 q2 | `||r||2 / ||b||2 < 1e-10` | none | |
-| T03 | `||r||2 / ||b||2 < 1e-8` | none | |
-| T04 | `||r||2 / ||b||2 < 1e-8` | none | zero initial guess |
-| T05 | `||r||2 / ||b||2 < 1e-8` | none | |
-| T06 | `||r||2 / ||b||2 < 1e-8` | none | complex system; zero initial guess |
-| T07 | `||r||2 / ||b||2 < 1e-6` | none | zero initial guess |
-| T08 | `||r||max < 1e-8` | none | complex system; ten RHS |
-| T09 | `||r||2 / ||b||2 < 1e-8` | CPU and GPU each `< 100 GB` | ten RHS |
-| T10 | `||r||2 / ||b||2 < 1e-8` | none | complex system; ten RHS |
-
-The final residual check uses the original matrix and RHS after all timed
-rounds. For T01 and T09, CPU and GPU memory are reported separately and must
-both be checked against their limits.
-
 ## Timing
 
 Each program runs ten rounds in one process: five warm-up rounds and five
