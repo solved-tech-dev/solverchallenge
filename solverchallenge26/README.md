@@ -22,22 +22,21 @@ You need:
 - Python 3;
 - the vendor runtime required by the selected product package;
 - the product packages and licenses for the problems you want to run;
-- a site-provided glibc compatibility runtime when the host glibc is older
-  than the selected package;
 - the competition matrix and right-hand-side files.
 
 Build and run inside a GPU allocation. Do not compile or run the solver on the
 login node.
 
-### Tested BW1000 cluster
+### Example BW1000 allocation
 
-The tested competition cluster runs Sugon OS 8.9 with glibc 2.28. Compute
-nodes provide DTK 25.04.4 and 26.04 modules. Load the version named by the
-downloaded package. A typical one-GPU allocation is:
+The following is an example for a Slurm cluster with BW1000. Replace the
+partition, resource, module, and path values with those provided by your
+site. Load the DTK version required by the selected product package. A
+typical one-GPU allocation is:
 
 ```bash
 salloc \
-  --partition=hx1hdnormal \
+  --partition=YOUR_PARTITION \
   --nodes=1 \
   --ntasks=1 \
   --cpus-per-task=16 \
@@ -47,33 +46,24 @@ salloc \
 srun --jobid="${SLURM_JOB_ID}" -N1 -n1 --pty bash
 ```
 
-Adjust the partition and resource values if your cluster uses different
-names. Run the remaining commands in the shell opened by `srun`:
+Run the remaining commands in the shell opened by `srun`. Select a writable
+working directory on your own cluster and replace the example path below:
 
 ```bash
 source /etc/profile.d/modules.sh
-module load compiler/dtk/26.04
+module load compiler/dtk/YOUR_DTK_VERSION
 command -v hipcc
 
-if [[ -d "/work2/${USER}" && -w "/work2/${USER}" ]]; then
-  export WORK_ROOT="/work2/${USER}"
-else
-  export WORK_ROOT="${HOME}/sc26-work"
-fi
-export TMPDIR="${WORK_ROOT}/tmp/solverchallenge26"
-mkdir -p "${WORK_ROOT}" "${TMPDIR}"
+export WORK_ROOT="/path/to/your/writable/work-directory"
+mkdir -p "${WORK_ROOT}"
 
 git clone https://github.com/solved-tech-dev/solverchallenge.git \
   "${WORK_ROOT}/solverchallenge"
 cd "${WORK_ROOT}/solverchallenge/solverchallenge26"
 ```
 
-Use cluster work storage when your account can write to it; otherwise use
-your home directory as shown above. The tested cluster has a small `/tmp`;
-exhausting it can make CMake report the misleading error `C compiler is not
-able to compile a simple test program`. The build and run scripts also select
-a writable fallback under the project's `local/tmp` directory when `TMPDIR`
-is unset or invalid.
+If your site does not use Slurm or module commands, open an interactive shell
+on an allocated compute node and load the equivalent vendor environment.
 
 The required products are:
 
@@ -107,8 +97,8 @@ the public SolverChallenge26 template.
 
 ### Step 1: Get the project
 
-If you followed the tested BW1000 cluster block above, the repository is
-already under `${WORK_ROOT}`; skip the clone command in this step.
+If you followed the allocation example above, the repository is already
+under `${WORK_ROOT}`; skip the clone command in this step.
 
 If Git is available, run:
 
@@ -137,51 +127,13 @@ c++ --version
 ```
 
 If a command is missing, load the corresponding environment module before
-continuing. On compute nodes of the tested BW1000 cluster, the runtime is
-loaded with:
+continuing. On clusters that use environment modules, use the command and
+version required by your site and the selected product package. For example:
 
 ```bash
 source /etc/profile.d/modules.sh
-module load compiler/dtk/26.04
+module load compiler/dtk/YOUR_DTK_VERSION
 ```
-
-Check the system C library version with `ldd --version` and compare it with
-the package README. The tested XianzhiKrylov and LinglongAMG builds require
-glibc2.35, while the tested PanguLU package requires glibc2.29. The tested
-cluster only provides glibc2.28. On an older system, use a compatible package
-or a compatibility runtime supplied by your administrator. For the latter,
-place the complete runtime in `local/compat-runtime` and add this to
-`configs/local.env`:
-
-```bash
-export SC26_COMPAT_ROOT="/absolute/path/to/solverchallenge26/local/compat-runtime"
-```
-
-The directory must contain `ld-linux-x86-64.so.2` and its matching libraries.
-The script applies it only to the solver. Do not add that directory to the
-shell's `LD_LIBRARY_PATH`.
-
-The tested LinglongAMG package also requires `libmsgpackc.so.2`. If that
-library is not installed system-wide, it must be present in the compatibility
-runtime. Check it with:
-
-```bash
-test -e "${SC26_COMPAT_ROOT}/libmsgpackc.so.2"
-find "${SC26_COMPAT_ROOT}" -maxdepth 1 \
-  \( -name 'libgalaxyhip.so*' -o -name 'libamdhip64.so*' \) -print
-```
-
-When running on the tested cluster, also select the runtime explicitly in
-`configs/local.env`:
-
-```bash
-export SC26_HIP_RUNTIME_LIBRARY=/public/software/compiler/dtk-26.04/hip/lib/libgalaxyhip.so.5
-```
-
-The run script adds the selected DTK runtime directories, including
-`dcc/lib` where the cluster provides `libomp.so`, to the solver's library
-search path. No manual copy or symbolic link inside `local/compat-runtime`
-is required.
 
 ### Step 3: Create the local folders
 
@@ -192,8 +144,7 @@ mkdir -p local/downloads \
          local/packages/pangulu \
          local/packages/linglongamg \
          local/packages/xianzhikrylov \
-         local/licenses \
-         local/compat-runtime
+         local/licenses
 ```
 
 ### Step 4: Generate the GPU device file
@@ -407,9 +358,8 @@ For T08 or T09, change every `10` in the example to `08` or `09`.
 
 ## Reference Environment
 
-The programs target one BW1000 DCU. Select the DTK version named by the
-product package. The published 26.46 LinglongAMG package validated with this
-checkout uses DTK26.04.
+The programs target one BW1000 DCU. Select the DTK version required by the
+downloaded product package.
 The scripts select 4, 8, or 16 CPU threads according to the problem.
 Per-problem runtime settings are in `problems/problemNN/config/runtime*.env`.
 Each problem directory also has a short README with its solver and
@@ -514,9 +464,9 @@ outside all measured intervals.
   allocation; do not reuse a key issued for another card.
 - `BATCH_ERROR out of memory` in T08: use the current 26.46 XianzhiKrylov
   package. Do not reduce `batch`; that was not a numerically valid workaround.
-- T04 numeric preparation fails: verify that LinglongAMG is the current
-  26.46 package for DTK26.04. Older builds are not compatible with the
-  published T04 configuration.
+- T04 numeric preparation fails: verify that the LinglongAMG package matches
+  the runtime used for the build and that its version supports the T04
+  configuration.
 - Shared library error: load the vendor runtime or set
   `SC26_HIP_RUNTIME_LIBRARY` in `configs/local.env`.
 - `Permission denied` when reading the competition data directory: ask the

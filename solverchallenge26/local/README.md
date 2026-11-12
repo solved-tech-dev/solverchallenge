@@ -34,7 +34,8 @@ local/
 ```
 
 Set `SC26_COMPAT_ROOT` in `configs/local.env`. The compatibility runtime is
-required on the tested Sugon OS 8.9 cluster because its system glibc is 2.28.
+only needed when the selected product packages require libraries that are not
+provided by the host system.
 
 Each package directory must contain the package payload directly. If an
 archive creates an additional top-level version directory, either remove that
