@@ -132,6 +132,18 @@ def check_gitee_layout():
                 )
 
 
+def check_run_script():
+    text = (ROOT / "scripts/run_problem.sh").read_text()
+    assignments = re.findall(
+        r"(?m)^export SC26_PANGULU_REUSE=(\S+)$",
+        text,
+    )
+    if assignments != ["L0"]:
+        raise AssertionError(
+            "run_problem.sh must set SC26_PANGULU_REUSE=L0 exactly once"
+        )
+
+
 def main():
     apps = ROOT / "apps"
     cpu_drivers = (
@@ -146,6 +158,7 @@ def main():
         )
 
     check_configs()
+    check_run_script()
     check_gitee_layout()
     print("round isolation checks passed")
 
