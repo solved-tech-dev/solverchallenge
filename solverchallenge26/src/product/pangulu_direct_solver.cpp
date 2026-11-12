@@ -10,6 +10,7 @@
 #include <pangulu.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -162,6 +163,9 @@ struct sc26_pangulu_direct_solver {
     std::uint64_t           analysis_calls  = 0;
     std::uint64_t           factorization_calls = 0;
     std::uint64_t           solve_calls     = 0;
+    double                  analysis_seconds = 0.0;
+    double                  factorization_seconds = 0.0;
+    double                  solve_seconds = 0.0;
 
     ~sc26_pangulu_direct_solver()
     {
@@ -355,6 +359,7 @@ extern "C" int sc26_pangulu_direct_solver_analysis(sc26_pangulu_direct_solver* s
     if (!solver) {
         return fail("PanguLU analysis", 1);
     }
+    const auto begin = std::chrono::steady_clock::now();
     const pangulu_status_t status =
         pangulu_execute(solver->handle, PANGULU_PHASE_ANALYSIS,
                         solver->matrix, nullptr, nullptr);
@@ -362,6 +367,8 @@ extern "C" int sc26_pangulu_direct_solver_analysis(sc26_pangulu_direct_solver* s
         return fail("pangulu_execute(ANALYSIS)", static_cast<int>(status));
     ++solver->analysis_calls;
     sample_device_memory(solver);
+    solver->analysis_seconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - begin).count();
     return 0;
 }
 
@@ -371,6 +378,7 @@ extern "C" int sc26_pangulu_direct_solver_factorize(sc26_pangulu_direct_solver* 
     if (!solver) {
         return fail("PanguLU factorization", 1);
     }
+    const auto begin = std::chrono::steady_clock::now();
     const pangulu_status_t status = pangulu_execute(
         solver->handle, PANGULU_PHASE_NUMERIC_FACTORISATION,
         solver->matrix, nullptr, nullptr);
@@ -379,6 +387,8 @@ extern "C" int sc26_pangulu_direct_solver_factorize(sc26_pangulu_direct_solver* 
                     static_cast<int>(status));
     ++solver->factorization_calls;
     sample_device_memory(solver);
+    solver->factorization_seconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - begin).count();
     return 0;
 }
 
@@ -388,6 +398,7 @@ extern "C" int sc26_pangulu_direct_solver_solve(sc26_pangulu_direct_solver* solv
     if (!solver) {
         return fail("PanguLU solve", 1);
     }
+    const auto begin = std::chrono::steady_clock::now();
     if (pangulu_execute(solver->handle, PANGULU_PHASE_SOLVE, solver->matrix, solver->solution, solver->rhs) != PANGULU_STATUS_SUCCESS)
         return fail("pangulu_execute(SOLVE)", 1);
     if (hip_runtime.synchronize_fn() != 0) {
@@ -395,6 +406,8 @@ extern "C" int sc26_pangulu_direct_solver_solve(sc26_pangulu_direct_solver* solv
     }
     ++solver->solve_calls;
     sample_device_memory(solver);
+    solver->solve_seconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - begin).count();
     return 0;
 }
 
@@ -407,6 +420,10 @@ extern "C" void sc26_pangulu_direct_solver_report(
         static_cast<unsigned long long>(solver->analysis_calls),
         static_cast<unsigned long long>(solver->factorization_calls),
         static_cast<unsigned long long>(solver->solve_calls));
+    std::printf(
+        "PANGULU_PHASE_SECONDS analysis=%.9f factorizations=%.9f solves=%.9f\n",
+        solver->analysis_seconds, solver->factorization_seconds,
+        solver->solve_seconds);
 }
 
 /* Copy the final device solution to the host after the measured rounds. */
