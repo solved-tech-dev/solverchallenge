@@ -84,6 +84,7 @@ def check_configs():
             "XI_FILL_CACHE=1",
             "XI_PATTERN_CACHE=1",
             "XI_REUSE_WORKSPACE=1",
+            "XK_T7_REUSE_ARENA=1",
         ):
             if setting in text:
                 raise AssertionError(
