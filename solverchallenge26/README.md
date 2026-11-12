@@ -4,9 +4,6 @@ SolverChallenge26 is the sixth edition of the annual linear solver algorithm and
 
 This repository provides solver programs for all ten SolverChallenge26 problems using **PanguLU, LinglongAMG, and XianzhiKrylov**. The repository does not contain product libraries, licenses, matrices, or right-hand sides. You can download the libraries and licenses from [https://store.solved-tech.com/](https://store.solved-tech.com/).
 
-For a platform-neutral continuation checklist, current handoff rules, and the
-competition timing checks, see [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md).
-
 **Competition and conference information**
 
 - **SolverChallenge26 website:** [https://www.solver-conference.cn/solverchallenge26/](https://www.solver-conference.cn/solverchallenge26/)
