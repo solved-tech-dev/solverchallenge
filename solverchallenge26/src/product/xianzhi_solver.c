@@ -282,13 +282,15 @@ static int materialize_config(
     const char *pangulu_library)
 {
     char *text;
-    char temporary[] = "/tmp/sc26-xk-config-XXXXXX";
+    const char *temporary_directory;
     int descriptor;
+    int written;
     FILE *file;
     size_t length;
     int status;
     if (!output || output_size == 0 || !template_path)
         return SC26_XK_ERR_ARGUMENT;
+    output[0] = '\0';
     text = read_text_file(template_path);
     if (!text) return SC26_XK_ERR_IO;
     status = replace_all(&text, "@LINGLONGAMG_LIBRARY@", provider_library);
@@ -298,28 +300,40 @@ static int materialize_config(
         free(text);
         return status;
     }
-    descriptor = mkstemp(temporary);
+    temporary_directory = getenv("TMPDIR");
+    if (!temporary_directory || !temporary_directory[0])
+        temporary_directory = "/tmp";
+    written = snprintf(
+        output, output_size, "%s/sc26-xk-config-XXXXXX",
+        temporary_directory);
+    if (written < 0 || (size_t)written >= output_size) {
+        free(text);
+        output[0] = '\0';
+        return SC26_XK_ERR_ARGUMENT;
+    }
+    descriptor = mkstemp(output);
     if (descriptor < 0) {
         free(text);
+        output[0] = '\0';
         return SC26_XK_ERR_IO;
     }
     file = fdopen(descriptor, "wb");
     if (!file) {
         close(descriptor);
-        unlink(temporary);
+        unlink(output);
         free(text);
+        output[0] = '\0';
         return SC26_XK_ERR_IO;
     }
     length = strlen(text);
     status = fwrite(text, 1, length, file) == length ? SC26_XK_OK : SC26_XK_ERR_IO;
     free(text);
     if (fclose(file) != 0 && !status) status = SC26_XK_ERR_IO;
-    if (status || strlen(temporary) + 1 > output_size) {
-        unlink(temporary);
-        return status ? status : SC26_XK_ERR_ARGUMENT;
+    if (status) {
+        unlink(output);
+        output[0] = '\0';
     }
-    strcpy(output, temporary);
-    return SC26_XK_OK;
+    return status;
 }
 
 

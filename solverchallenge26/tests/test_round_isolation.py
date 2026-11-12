@@ -172,6 +172,14 @@ def check_product_reset():
         )
     if "sc26_xianzhi_solver_reset(" not in xianzhi:
         raise AssertionError("XianzhiKrylov reset entry point is missing")
+    if 'getenv("TMPDIR")' not in xianzhi:
+        raise AssertionError(
+            "XianzhiKrylov must honor TMPDIR for temporary configs"
+        )
+    if 'mkstemp("/tmp' in xianzhi:
+        raise AssertionError(
+            "XianzhiKrylov must not hard-code /tmp"
+        )
 
     pangulu = (ROOT / "src/product/pangulu_direct_solver.cpp").read_text()
     if "sc26_pangulu_direct_solver_reset(" not in pangulu:
