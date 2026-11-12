@@ -454,13 +454,17 @@ previous solution. Matrix A and the RHS files are loaded once as immutable test
 inputs. Every `ANALYSIS` call must rebuild structure from the input pattern,
 even when the matrix object and its pointers have not changed. Within a single
 multi-RHS round, an algorithm may reuse its factorization across those RHS.
+LinglongAMG configurations therefore use `reuse_structure=0`; PanguLU uses
+reuse level `L0`; and the XianzhiKrylov T08 path keeps its pattern, fill, and
+workspace caches disabled.
 
 The directory layout, public entry points, and `problem01` through `problem10`
 customization contract remain compatible with the Gitee sample code. Use the
 `time_ms` field in `performance.tsv` as the reported time.
 
-Timers are in `apps/iterative_solver.c`, `apps/iterative_solver_multi.c`, and
-`apps/direct_solver_multi.c`. Library statistics follow each `TRIAL` line.
+Timers are in `apps/iterative_solver.c`, `apps/direct_solver.c`,
+`apps/iterative_solver_multi.c`, and `apps/direct_solver_multi.c`. Library
+statistics follow each `TRIAL` line.
 The final independent check uses the original A and b; single-RHS iterative
 runs use binary128 arithmetic and return failure if their required residual
 is not met. T08 checks complex absolute maximum residual for every RHS;

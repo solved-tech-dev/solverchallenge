@@ -66,15 +66,29 @@ def check_configs():
         text = path.read_text(errors="replace")
         if "XK_DIAG_TRIALS=10" in text:
             raise AssertionError(f"{path}: nested ten-trial diagnostic is forbidden")
+        if path.name.startswith("amg_") and path.suffix == ".json":
+            config = json.loads(text)
+            reuse = (
+                config.get("setup", {}).get("reuse_structure", 0)
+                if isinstance(config, dict)
+                else 0
+            )
+            if reuse not in (0, False):
+                raise AssertionError(
+                    f"{path}: LinglongAMG must rebuild structure every round"
+                )
 
-    t08 = (ROOT / "problems/problem08/config/runtime.env").read_text()
-    for setting in (
-        "XI_FILL_CACHE=1",
-        "XI_PATTERN_CACHE=1",
-        "XI_REUSE_WORKSPACE=1",
-    ):
-        if setting in t08:
-            raise AssertionError(f"T08 keeps forbidden cross-round state: {setting}")
+    for path in (ROOT / "problems").glob("problem*/config/runtime*.env"):
+        text = path.read_text(errors="replace")
+        for setting in (
+            "XI_FILL_CACHE=1",
+            "XI_PATTERN_CACHE=1",
+            "XI_REUSE_WORKSPACE=1",
+        ):
+            if setting in text:
+                raise AssertionError(
+                    f"{path}: forbidden cross-round state: {setting}"
+                )
     for problem in ("09", "10"):
         config = json.loads(
             (ROOT / f"problems/problem{problem}/config/solver.json").read_text()

@@ -12,7 +12,10 @@ struct MySolver_complex {
 };
 
 void sc26_problem_create(void *solver, const struct SC26_SolverInput *input);
+void sc26_problem_report(void *solver);
 void sc26_problem_destroy(void *solver, const struct SC26_SolverInput *input);
+
+#define SC26_SOLVER_REPORT(solver) sc26_problem_report((void *)(solver))
 
 #define SC26_SOLVER_CREATE(solver, input) \
     sc26_problem_create((void *)(solver), (input))

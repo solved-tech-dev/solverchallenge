@@ -18,6 +18,8 @@ int sc26_pangulu_direct_solver_factorize(
     struct sc26_pangulu_direct_solver *solver);
 int sc26_pangulu_direct_solver_solve(
     struct sc26_pangulu_direct_solver *solver);
+void sc26_pangulu_direct_solver_report(
+    struct sc26_pangulu_direct_solver *solver);
 int sc26_pangulu_direct_solver_finish(
     struct sc26_pangulu_direct_solver *solver);
 void sc26_pangulu_direct_solver_destroy(

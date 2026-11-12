@@ -73,6 +73,34 @@ def summarize_log(path):
         if found:
             row["iterations"] = int(found[1])
 
+        found = re.search(
+            r"structure_builds=(\d+) numeric_builds=(\d+)",
+            tail,
+        )
+        if found:
+            row["structure_builds"] = int(found[1])
+            row["numeric_builds"] = int(found[2])
+
+        found = re.search(
+            r"PANGULU_PHASE_COUNTS analysis=(\d+) "
+            r"factorizations=(\d+) solves=(\d+)",
+            tail,
+        )
+        if found:
+            row["pangu_analysis_calls"] = int(found[1])
+            row["pangu_factorizations"] = int(found[2])
+            row["pangu_solves"] = int(found[3])
+
+        found = re.search(
+            r"pangulu_handle_creates=(\d+) pangulu_analyses=(\d+) "
+            r"pangulu_factorizations=(\d+)",
+            tail,
+        )
+        if found:
+            row["pangulu_handle_creates"] = int(found[1])
+            row["pangulu_analyses"] = int(found[2])
+            row["pangulu_factorizations"] = int(found[3])
+
         # The application timer already starts after input loading and emits
         # raw_seconds over the competition solve phases.  The excluded_* fields
         # are diagnostics; on reused T04/T07 paths they can describe work that
@@ -104,6 +132,48 @@ def summarize_log(path):
             if found:
                 result["time_ms"] = round(float(found[1]), 6)
 
+    if [row["trial"] for row in rounds] != list(
+            range(WARMUP_ROUNDS + MEASURED_ROUNDS)):
+        result["status"] = "FAIL"
+    for row in rounds:
+        expected = row["trial"] + 1
+        has_xianzhi_evidence = (
+            "structure_builds" in row and "numeric_builds" in row
+        )
+        has_pangulu_evidence = all(
+            key in row
+            for key in (
+                "pangu_analysis_calls",
+                "pangu_factorizations",
+                "pangu_solves",
+            )
+        )
+        if not (has_xianzhi_evidence or has_pangulu_evidence):
+            result["status"] = "FAIL"
+        if has_xianzhi_evidence and (
+            row["structure_builds"] != expected
+            or row["numeric_builds"] != expected
+        ):
+            result["status"] = "FAIL"
+        if "pangu_analysis_calls" in row and row["pangu_analysis_calls"] != expected:
+            result["status"] = "FAIL"
+        if "pangu_factorizations" in row and row["pangu_factorizations"] != expected:
+            result["status"] = "FAIL"
+        if "pangu_solves" in row and row["pangu_solves"] != expected:
+            result["status"] = "FAIL"
+        if "pangulu_analyses" in row and row["pangulu_analyses"] != expected:
+            result["status"] = "FAIL"
+        if (
+            "pangulu_factorizations" in row
+            and row["pangulu_factorizations"] != expected
+        ):
+            result["status"] = "FAIL"
+        if (
+            "pangulu_handle_creates" in row
+            and row["pangulu_handle_creates"] != 1
+        ):
+            result["status"] = "FAIL"
+
     rhs_checks = re.findall(
         r"RESIDUAL rhs=(\d+) relative_l2="
         + NUMBER
@@ -125,12 +195,17 @@ def summarize_log(path):
         result["max_relative_l2"] = max(float(row[1]) for row in rhs_checks)
         result["max_absolute_max"] = max(float(row[2]) for row in rhs_checks)
         if len(rhs_checks) == 10 and all(row[3] == "PASS" for row in rhs_checks):
-            result["status"] = "PASS"
+            if result["status"] != "FAIL":
+                result["status"] = "PASS"
         else:
             result["status"] = "FAIL"
     elif final_checks:
         result["max_relative_l2"] = max(float(row[0]) for row in final_checks)
-        result["status"] = "PASS" if all(row[2] == "PASS" for row in final_checks) else "FAIL"
+        if all(row[2] == "PASS" for row in final_checks):
+            if result["status"] != "FAIL":
+                result["status"] = "PASS"
+        else:
+            result["status"] = "FAIL"
 
     error_markers = (
         "solver creation failed",

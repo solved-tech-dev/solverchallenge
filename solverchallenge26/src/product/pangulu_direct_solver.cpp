@@ -159,6 +159,9 @@ struct sc26_pangulu_direct_solver {
     std::size_t             baseline_free   = 0;
     std::size_t             minimum_free    = 0;
     std::size_t             device_total    = 0;
+    std::uint64_t           analysis_calls  = 0;
+    std::uint64_t           factorization_calls = 0;
+    std::uint64_t           solve_calls     = 0;
 
     ~sc26_pangulu_direct_solver()
     {
@@ -352,9 +355,12 @@ extern "C" int sc26_pangulu_direct_solver_analysis(sc26_pangulu_direct_solver* s
     if (!solver) {
         return fail("PanguLU analysis", 1);
     }
-    if (pangulu_execute(solver->handle, PANGULU_PHASE_ANALYSIS, solver->matrix, nullptr, nullptr) != PANGULU_STATUS_SUCCESS) {
-        return fail("pangulu_execute(ANALYSIS)", 1);
-    }
+    const pangulu_status_t status =
+        pangulu_execute(solver->handle, PANGULU_PHASE_ANALYSIS,
+                        solver->matrix, nullptr, nullptr);
+    if (status != PANGULU_STATUS_SUCCESS)
+        return fail("pangulu_execute(ANALYSIS)", static_cast<int>(status));
+    ++solver->analysis_calls;
     sample_device_memory(solver);
     return 0;
 }
@@ -365,9 +371,13 @@ extern "C" int sc26_pangulu_direct_solver_factorize(sc26_pangulu_direct_solver* 
     if (!solver) {
         return fail("PanguLU factorization", 1);
     }
-    if (pangulu_execute(solver->handle, PANGULU_PHASE_NUMERIC_FACTORISATION, solver->matrix, nullptr, nullptr) != PANGULU_STATUS_SUCCESS) {
-        return fail("pangulu_execute(NUMERIC_FACTORISATION)", 1);
-    }
+    const pangulu_status_t status = pangulu_execute(
+        solver->handle, PANGULU_PHASE_NUMERIC_FACTORISATION,
+        solver->matrix, nullptr, nullptr);
+    if (status != PANGULU_STATUS_SUCCESS)
+        return fail("pangulu_execute(NUMERIC_FACTORISATION)",
+                    static_cast<int>(status));
+    ++solver->factorization_calls;
     sample_device_memory(solver);
     return 0;
 }
@@ -383,8 +393,20 @@ extern "C" int sc26_pangulu_direct_solver_solve(sc26_pangulu_direct_solver* solv
     if (hip_runtime.synchronize_fn() != 0) {
         return fail("PanguLU solve synchronization", 1);
     }
+    ++solver->solve_calls;
     sample_device_memory(solver);
     return 0;
+}
+
+extern "C" void sc26_pangulu_direct_solver_report(
+    sc26_pangulu_direct_solver* solver)
+{
+    if (!solver) return;
+    std::printf(
+        "PANGULU_PHASE_COUNTS analysis=%llu factorizations=%llu solves=%llu\n",
+        static_cast<unsigned long long>(solver->analysis_calls),
+        static_cast<unsigned long long>(solver->factorization_calls),
+        static_cast<unsigned long long>(solver->solve_calls));
 }
 
 /* Copy the final device solution to the host after the measured rounds. */

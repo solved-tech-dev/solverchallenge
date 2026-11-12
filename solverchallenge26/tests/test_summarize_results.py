@@ -18,7 +18,14 @@ SUMMARY = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SUMMARY)
 
 
-def make_log(path, diagnostic_line):
+def make_log(
+    path,
+    diagnostic_line,
+    *,
+    structure_base=0,
+    numeric_base=0,
+    omit_evidence=False,
+):
     raw_seconds = [0.90, 0.92, 0.94, 0.96, 0.98, 1.00, 1.02, 1.04, 1.06, 1.08]
     lines = []
     for trial, raw in enumerate(raw_seconds):
@@ -32,6 +39,11 @@ def make_log(path, diagnostic_line):
                 diagnostic_line,
             ]
         )
+        if not omit_evidence:
+            lines.append(
+                "structure_builds=%d numeric_builds=%d"
+                % (structure_base + trial + 1, numeric_base + trial + 1)
+            )
     lines.append("VERIFICATION relative_l2=1e-9 threshold=1e-8 PASS")
     path.write_text("\n".join(lines) + "\n")
     return statistics.mean(raw_seconds[5:])
@@ -87,6 +99,22 @@ class SummaryTimingTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 status = SUMMARY.main(["summarize_results.py", str(path)])
             self.assertEqual(status, 0)
+
+    def test_reused_structure_counter_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T01_q1.log"
+            make_log(path, "diagnostic", structure_base=-1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                status = SUMMARY.main(["summarize_results.py", str(path)])
+            self.assertEqual(status, 1)
+
+    def test_missing_rebuild_evidence_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T07_q1.log"
+            make_log(path, "diagnostic", omit_evidence=True)
+            with contextlib.redirect_stdout(io.StringIO()):
+                status = SUMMARY.main(["summarize_results.py", str(path)])
+            self.assertEqual(status, 1)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@
     "rap_method": "onestep",
     "block_size": 4,
     "block_storage": "csr_backed",
-    "reuse_structure": 1
+    "reuse_structure": 0
   },
   "solve": {
     "method": "amg",

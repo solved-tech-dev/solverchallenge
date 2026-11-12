@@ -92,6 +92,16 @@ static void sc26_pangulu_require(int status, const char* operation)
 
 /* Copy the final solution and release the PanguLU adapter. */
 #define SC26_DEFINE_PANGULU_DESTROY()                                                                                                                \
+    void sc26_problem_report(void* solver)                                                                                                          \
+    {                                                                                                                                                \
+        struct MySolver*                   state = (struct MySolver*)solver;                                                                         \
+        struct sc26_pangulu_direct_solver* product;                                                                                                  \
+        if (!state)                                                                                                                                  \
+            return;                                                                                                                                  \
+        product = (struct sc26_pangulu_direct_solver*)state->product;                                                                                \
+        if (product)                                                                                                                                 \
+            sc26_pangulu_direct_solver_report(product);                                                                                              \
+    }                                                                                                                                                \
     void sc26_problem_destroy(void* solver, const struct SC26_SolverInput* input)                                                                    \
     {                                                                                                                                                \
         struct MySolver*                   state = (struct MySolver*)solver;                                                                         \
