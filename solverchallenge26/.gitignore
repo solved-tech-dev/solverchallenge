@@ -74,8 +74,3 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-
-# Local assistant state. Project handoffs belong in docs/ and must remain readable.
-.codex/
-.omx/
-.deepseek/
