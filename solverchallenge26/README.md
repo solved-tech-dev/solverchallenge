@@ -196,9 +196,33 @@ mkdir -p local/downloads \
          local/compat-runtime
 ```
 
-### Step 4: Put the downloaded packages in `local/downloads`
+### Step 4: Generate the GPU device file
 
-Copy one package archive for each required product into `local/downloads`:
+Download the GPU device identifier tool from
+[https://store.solved-tech.com/device-tools/](https://store.solved-tech.com/device-tools/),
+and select the Linux x86-64 tool for BW1000. Save the executable under
+`local/downloads`, then run it inside the GPU allocation on the compute node:
+
+```bash
+chmod +x local/downloads/solved-tech-gpu-id-linux-x86_64
+local/downloads/solved-tech-gpu-id-linux-x86_64 \
+  --output local/gpu-ids.json
+test -s local/gpu-ids.json
+```
+
+The tool must run on the same GPU allocation that will execute the solvers.
+Do not generate the file on the login node.
+
+### Step 5: Download product packages and licenses
+
+1. Sign in at [https://store.solved-tech.com/](https://store.solved-tech.com/).
+2. Open the cart and import `local/gpu-ids.json`.
+3. Select the BW1000 device that will execute the solver.
+4. Select PanguLU, LinglongAMG, and XianzhiKrylov versions compatible with
+   the installed DTK runtime and the problems you need.
+5. Complete the store's purchase, trial, or authorization flow.
+6. Download the product archives from **My Orders** and save them under
+   `local/downloads`:
 
 ```text
 local/downloads/pangulu-*.tar.gz
@@ -206,9 +230,12 @@ local/downloads/linglongamg-*.tar.gz
 local/downloads/xianzhikrylov-*.tar.gz
 ```
 
-Use packages built for the target GPU and its installed vendor runtime.
+7. Download the generated license files for each product from
+   **Device Authorization** and save them under `local/licenses`.
 
-### Step 5: Extract the packages
+Use packages and licenses built for the same GPU and vendor runtime.
+
+### Step 6: Extract the packages
 
 ```bash
 tar -xzf local/downloads/pangulu-*.tar.gz \
@@ -221,12 +248,11 @@ tar -xzf local/downloads/xianzhikrylov-*.tar.gz \
 
 The scripts load these package directories automatically.
 
-### Step 6: Put the licenses in `local/licenses`
+### Step 7: Confirm the licenses
 
-Copy one valid license for each required product into `local/licenses` and
-keep the downloaded file names. Keep only the current key for each product
-in that directory. Each key must match the allocated GPU and remain valid
-for the whole run.
+Keep one current license for each required product in `local/licenses` and
+keep the downloaded file names. Each key must match the allocated GPU and
+remain valid for the whole run.
 
 The environment, build, and run scripts automatically copy the selected keys
 into the corresponding SDK's `licenses/` directory, which the product reads.
@@ -237,7 +263,7 @@ command installs the new copy. Use product directories that you can write to.
 ls -l local/licenses
 ```
 
-### Step 7: Check the environment
+### Step 8: Check the environment
 
 Run:
 
@@ -255,7 +281,7 @@ The command prints clear `OK`, `WARN`, and `FAIL` messages.
 The same `SC26_PROBLEMS` value used for the run limits the packages and data
 files checked here.
 
-### Step 8: Set the matrix and RHS paths
+### Step 9: Set the matrix and RHS paths
 
 On the competition cluster, use the shared directory:
 
@@ -267,7 +293,7 @@ This directory contains `solverchallenge26_01` through
 `solverchallenge26_10`. Do not copy the data files into this repository.
 On another system, set `DATA_ROOT` or `SC26_DATA_ROOT` to your own directory.
 
-### Step 9: Build and run problems
+### Step 10: Build and run problems
 
 ```bash
 ./scripts/run_all_problems.sh "$DATA_ROOT"
@@ -317,7 +343,7 @@ its log:
 cat "$latest_run/run-logs/T01_q1.log"
 ```
 
-### Step 10: Run one problem
+### Step 11: Run one problem
 
 Each problem can also be built and run independently. The command prints
 the result directory and a one-row performance table. A one-constraint
