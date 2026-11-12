@@ -236,6 +236,13 @@ fi
 
 if [[ -n "${SC26_HIP_RUNTIME_LIBRARY:-}" ]]; then
     check_file "${SC26_HIP_RUNTIME_LIBRARY}" "HIP runtime library"
+    hip_lib_dir="$(dirname "$(realpath -e -- "$SC26_HIP_RUNTIME_LIBRARY")")"
+    dtk_root="$(dirname "$(dirname "$hip_lib_dir")")"
+    if [[ -f "$dtk_root/dcc/lib/libomp.so" ]]; then
+        print_ok "OpenMP runtime: $dtk_root/dcc/lib/libomp.so"
+    else
+        print_warn "libomp.so was not found under the selected DTK runtime"
+    fi
 fi
 
 if [[ -n "${TMPDIR:-}" ]]; then

@@ -149,7 +149,18 @@ if [[ -n "${SC26_HIP_RUNTIME_LIBRARY:-}" ]]; then
     fi
     hip_lib_dir="$(dirname "$(realpath -e -- "$SC26_HIP_RUNTIME_LIBRARY")")"
     dtk_root="$(dirname "$(dirname "$hip_lib_dir")")"
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$hip_lib_dir:$dtk_root/lib:$dtk_root/lib64"
+    runtime_library_paths=(
+        "$hip_lib_dir"
+        "$dtk_root/lib"
+        "$dtk_root/lib64"
+        "$dtk_root/dcc/lib"
+    )
+    for runtime_library_path in "${runtime_library_paths[@]}"; do
+        if [[ -d "$runtime_library_path" &&
+              ":${LD_LIBRARY_PATH:-}:" != *":${runtime_library_path}:"* ]]; then
+            export LD_LIBRARY_PATH="${runtime_library_path}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+        fi
+    done
 fi
 
 runner=()

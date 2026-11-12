@@ -176,6 +176,11 @@ When running on the tested cluster, also select the runtime explicitly in
 export SC26_HIP_RUNTIME_LIBRARY=/public/software/compiler/dtk-26.04/hip/lib/libgalaxyhip.so.5
 ```
 
+The run script adds the selected DTK runtime directories, including
+`dcc/lib` where the cluster provides `libomp.so`, to the solver's library
+search path. No manual copy or symbolic link inside `local/compat-runtime`
+is required.
+
 ### Step 3: Create the local folders
 
 Packages and licenses are deliberately kept outside Git. Run:
