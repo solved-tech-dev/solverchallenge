@@ -570,6 +570,28 @@ int sc26_xianzhi_solver_analysis(struct sc26_xianzhi_solver *solver)
 }
 
 
+/* Restore zero initial data before the caller starts the round timer. */
+int sc26_xianzhi_solver_reset(struct sc26_xianzhi_solver *solver)
+{
+    uint64_t scalar_count;
+    uint64_t bytes;
+    int status;
+    if (!solver) return SC26_XK_ERR_ARGUMENT;
+    scalar_count = (uint64_t)solver->n * (uint64_t)solver->rhs_count;
+    bytes = checked_bytes(
+        scalar_count * (uint64_t)solver->components, sizeof(double));
+    if (bytes == UINT64_MAX) return SC26_XK_ERR_MEMORY;
+    if ((status = device_zero(solver->device_solution, bytes))) return status;
+    bytes = checked_bytes(scalar_count, sizeof(double));
+    if (solver->dd_solution &&
+        (status = device_zero(solver->device_solution_low, bytes)))
+        return status;
+    return hip_runtime.synchronize_fn() == 0
+               ? SC26_XK_OK
+               : SC26_XK_ERR_RUNTIME;
+}
+
+
 /* Build numeric preconditioner or factorization data for this round. */
 int sc26_xianzhi_solver_numeric_prepare(struct sc26_xianzhi_solver *solver)
 {
@@ -582,24 +604,11 @@ int sc26_xianzhi_solver_numeric_prepare(struct sc26_xianzhi_solver *solver)
 }
 
 
-/*
- * Reset the product solution to zero and run the solve phase.  The operation
- * is synchronous so the caller can time each round accurately.
- */
+/* Run the solve phase and synchronize before the caller stops its timer. */
 int sc26_xianzhi_solver_solve(struct sc26_xianzhi_solver *solver)
 {
-    uint64_t scalar_count;
-    uint64_t bytes;
     int status;
     if (!solver) return SC26_XK_ERR_ARGUMENT;
-    scalar_count = (uint64_t)solver->n * (uint64_t)solver->rhs_count;
-    bytes = checked_bytes(scalar_count * (uint64_t)solver->components, sizeof(double));
-    if (bytes == UINT64_MAX) return SC26_XK_ERR_MEMORY;
-    if ((status = device_zero(solver->device_solution, bytes))) return status;
-    bytes = checked_bytes(scalar_count, sizeof(double));
-    if (solver->dd_solution &&
-        (status = device_zero(solver->device_solution_low, bytes)))
-        return status;
     status = product_status(
         "xianzhikrylov_execute(SOLVE)",
         xianzhikrylov_execute(

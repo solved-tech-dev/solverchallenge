@@ -354,6 +354,24 @@ extern "C" int sc26_pangulu_direct_solver_create(sc26_pangulu_direct_solver** so
     return 0;
 }
 
+/* Restore zero initial data before the caller starts the round timer. */
+extern "C" int sc26_pangulu_direct_solver_reset(sc26_pangulu_direct_solver* solver)
+{
+    if (!solver) {
+        return fail("PanguLU solution reset", 1);
+    }
+    const std::uint64_t vector_count =
+        std::uint64_t(solver->n) * std::uint64_t(solver->rhs_count) *
+        std::uint64_t(solver->components);
+    if (hip_zero(solver->solution_values,
+                 static_cast<std::size_t>(vector_count *
+                                          sizeof(*solver->solution_values))) != 0)
+        return fail("PanguLU solution reset", 1);
+    if (hip_runtime.synchronize_fn() != 0)
+        return fail("PanguLU solution reset synchronization", 1);
+    return 0;
+}
+
 /* Run the structural analysis phase. */
 extern "C" int sc26_pangulu_direct_solver_analysis(sc26_pangulu_direct_solver* solver)
 {

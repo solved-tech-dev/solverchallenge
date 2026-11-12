@@ -46,6 +46,22 @@ def check_driver(path, create, destroy, expected_loops):
     for index, body in enumerate(bodies):
         if "memset" not in body:
             raise AssertionError(f"{path}: loop {index} does not restore x=0")
+        reset_at = body.find("SC26_SOLVER_RESET")
+        timer_markers = [
+            position
+            for marker in ("GetCurrentTime()", "sc26_multi_seconds()")
+            if (position := body.find(marker)) >= 0
+        ]
+        if reset_at < 0:
+            raise AssertionError(
+                f"{path}: loop {index} does not reset device solution state"
+            )
+        if not timer_markers:
+            raise AssertionError(f"{path}: loop {index} has no round timer")
+        if reset_at > min(timer_markers):
+            raise AssertionError(
+                f"{path}: loop {index} resets solution after timing starts"
+            )
         if "analyse" not in body and "preprocess" not in body:
             raise AssertionError(f"{path}: loop {index} has no timed setup phase")
         for marker in (create, destroy):
@@ -145,6 +161,23 @@ def check_run_script():
         )
 
 
+def check_product_reset():
+    xianzhi = (ROOT / "src/product/xianzhi_solver.c").read_text()
+    solve_start = xianzhi.index("int sc26_xianzhi_solver_solve(")
+    solve_end = xianzhi.index("\n}\n", solve_start) + 3
+    solve_body = xianzhi[solve_start:solve_end]
+    if "device_zero(" in solve_body:
+        raise AssertionError(
+            "XianzhiKrylov solve must not reset the solution inside its timer"
+        )
+    if "sc26_xianzhi_solver_reset(" not in xianzhi:
+        raise AssertionError("XianzhiKrylov reset entry point is missing")
+
+    pangulu = (ROOT / "src/product/pangulu_direct_solver.cpp").read_text()
+    if "sc26_pangulu_direct_solver_reset(" not in pangulu:
+        raise AssertionError("PanguLU reset entry point is missing")
+
+
 def main():
     apps = ROOT / "apps"
     cpu_drivers = (
@@ -160,6 +193,7 @@ def main():
 
     check_configs()
     check_run_script()
+    check_product_reset()
     check_gitee_layout()
     print("round isolation checks passed")
 

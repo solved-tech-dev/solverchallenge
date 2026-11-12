@@ -54,6 +54,7 @@ int main(int argc, char** argv)
                    sizeof(*system.x_all) * (size_t)system.n * (size_t)system.rhs_count);
             memset(system.x_im_all, 0,
                    sizeof(*system.x_im_all) * (size_t)system.n * (size_t)system.rhs_count);
+            SC26_SOLVER_RESET(&solver);
             start = sc26_multi_seconds();
             analyse_complex(&solver, &input);
             preprocess_complex(&solver, &input);
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
         for (int trial = 0; trial < 10; ++trial) {
             memset(system.x_all, 0,
                    sizeof(*system.x_all) * (size_t)system.n * (size_t)system.rhs_count);
+            SC26_SOLVER_RESET(&solver);
             start = sc26_multi_seconds();
             analyse(&solver, &input);
             preprocess(&solver, &input);

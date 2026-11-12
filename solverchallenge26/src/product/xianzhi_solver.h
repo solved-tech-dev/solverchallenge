@@ -22,6 +22,8 @@ int sc26_xianzhi_solver_create(
     const struct SC26_SolverInput *input,
     const struct sc26_xianzhi_options *options);
 
+/* Restore the required zero initial guess before starting a round timer. */
+int sc26_xianzhi_solver_reset(struct sc26_xianzhi_solver *solver);
 int sc26_xianzhi_solver_analysis(struct sc26_xianzhi_solver *solver);
 int sc26_xianzhi_solver_numeric_prepare(struct sc26_xianzhi_solver *solver);
 int sc26_xianzhi_solver_solve(struct sc26_xianzhi_solver *solver);

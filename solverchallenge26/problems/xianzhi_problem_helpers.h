@@ -58,6 +58,12 @@ static void sc26_problem_create_xianzhi(void* solver, const struct SC26_SolverIn
     sc26_xianzhi_require(sc26_xianzhi_solver_create((struct sc26_xianzhi_solver**)&state->product, input, &options), "solver creation");
 }
 
+void sc26_problem_reset(void* solver)
+{
+    sc26_xianzhi_require(sc26_xianzhi_solver_reset(sc26_xianzhi_state(solver)),
+                         "solution reset");
+}
+
 /* Connect the iterative program phases to the XianzhiKrylov adapter. */
 #define SC26_DEFINE_XIANZHI_ITERATIVE_CALLBACKS()                                                                                                    \
     void analyse(struct MySolver* solver, const struct SC26_SolverInput* input)                                                                      \

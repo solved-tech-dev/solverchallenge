@@ -14,6 +14,8 @@ struct sc26_pangulu_direct_solver;
 int sc26_pangulu_direct_solver_create(
     struct sc26_pangulu_direct_solver **solver,
     const struct SC26_SolverInput *input);
+int sc26_pangulu_direct_solver_reset(
+    struct sc26_pangulu_direct_solver *solver);
 int sc26_pangulu_direct_solver_analysis(
     struct sc26_pangulu_direct_solver *solver);
 int sc26_pangulu_direct_solver_factorize(

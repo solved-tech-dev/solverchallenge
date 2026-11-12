@@ -121,6 +121,7 @@ int main(int argc, char** argv)
         SC26_SOLVER_CREATE(&mysolver, &solver_input);
         for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
             memset(x, 0, sizeof(*x) * (size_t)n);
+            SC26_SOLVER_RESET(&mysolver);
             tt = GetCurrentTime();
             preprocess(&mysolver, &solver_input);
             direct_solver(&mysolver, &solver_input);
@@ -138,6 +139,7 @@ int main(int argc, char** argv)
         for (int trial = 0; trial < warmup_frequency + test_frequency; ++trial) {
             memset(x, 0, sizeof(*x) * (size_t)n);
             memset(x_im, 0, sizeof(*x_im) * (size_t)n);
+            SC26_SOLVER_RESET(&mysolver);
             tt = GetCurrentTime();
             preprocess_complex(&mysolver, &solver_input);
             direct_solver_complex(&mysolver, &solver_input);

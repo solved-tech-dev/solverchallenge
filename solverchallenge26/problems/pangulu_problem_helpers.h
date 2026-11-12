@@ -24,6 +24,13 @@ static void sc26_pangulu_require(int status, const char* operation)
     exit(EXIT_FAILURE);
 }
 
+void sc26_problem_reset(void* solver)
+{
+    sc26_pangulu_require(
+        sc26_pangulu_direct_solver_reset(sc26_pangulu_state(solver)),
+        "PanguLU solution reset");
+}
+
 /* Connect the direct program phases to the PanguLU adapter. */
 #define SC26_DEFINE_PANGULU_DIRECT_CALLBACKS()                                                                                                       \
     void preprocess(struct MySolver* solver, const struct SC26_SolverInput* input)                                                                   \
