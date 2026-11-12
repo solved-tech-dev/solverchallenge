@@ -131,6 +131,10 @@ add_executable(direct_solver_multi
 target_link_libraries(direct_solver_multi PRIVATE
     sc26_io sc26_diagnostics sc26_solver_config sc26_problem_dependencies)
 target_compile_definitions(direct_solver_multi PRIVATE DIRECT_SOLVER)
+if(SC26_PROBLEM STREQUAL "09" OR SC26_PROBLEM STREQUAL "9")
+    target_compile_definitions(direct_solver_multi PRIVATE
+        SC26_GPU_MEMORY_LIMIT_MB=102400)
+endif()
 
 if(SC26_BUILD_MPI)
     add_library(sc26_mpi_io STATIC src/mpi_system_loader.c)

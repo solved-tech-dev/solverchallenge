@@ -160,6 +160,7 @@ struct sc26_pangulu_direct_solver {
     std::size_t             baseline_free   = 0;
     std::size_t             minimum_free    = 0;
     std::size_t             device_total    = 0;
+    bool                    memory_reported = false;
     std::uint64_t           analysis_calls  = 0;
     std::uint64_t           factorization_calls = 0;
     std::uint64_t           solve_calls     = 0;
@@ -426,6 +427,27 @@ extern "C" void sc26_pangulu_direct_solver_report(
         solver->solve_seconds);
 }
 
+extern "C" int sc26_pangulu_direct_solver_memory_metrics(
+    sc26_pangulu_direct_solver* solver,
+    std::size_t*                peak_bytes,
+    std::size_t*                total_bytes,
+    int*                        available)
+{
+    if (!solver || !peak_bytes || !total_bytes || !available) {
+        return 1;
+    }
+    sample_device_memory(solver);
+    *available = solver->baseline_free != 0;
+    *peak_bytes = *available && solver->baseline_free > solver->minimum_free
+                      ? solver->baseline_free - solver->minimum_free
+                      : 0;
+    *total_bytes = solver->device_total;
+    if (*available) {
+        solver->memory_reported = true;
+    }
+    return 0;
+}
+
 /* Copy the final device solution to the host after the measured rounds. */
 static int copy_solution_to_host(sc26_pangulu_direct_solver* solver)
 {
@@ -468,7 +490,7 @@ extern "C" int sc26_pangulu_direct_solver_finish(sc26_pangulu_direct_solver* sol
         return fail("PanguLU finish", 1);
     }
     sample_device_memory(solver);
-    if (solver->baseline_free) {
+    if (solver->baseline_free && !solver->memory_reported) {
         const std::size_t used_bytes = solver->baseline_free > solver->minimum_free
                                            ? solver->baseline_free - solver->minimum_free
                                            : 0;
