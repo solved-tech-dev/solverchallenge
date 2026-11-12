@@ -36,8 +36,7 @@ login node.
 
 The tested competition cluster runs Sugon OS 8.9 with glibc 2.28. Compute
 nodes provide DTK 25.04.4 and 26.04 modules. Load the version named by the
-downloaded package; the published 26.46 LinglongAMG BW1000 package requires
-DTK 26.04. A typical one-GPU allocation is:
+downloaded package. A typical one-GPU allocation is:
 
 ```bash
 salloc \
