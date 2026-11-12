@@ -312,15 +312,16 @@ extern "C" int sc26_pangulu_direct_solver_create(sc26_pangulu_direct_solver** so
         return fail("PanguLU solution initialization", 1);
 
     pangulu_config_value reordering            = L1;
-    pangulu_config_value reuse                 = L2;
+    pangulu_config_value reuse                 = L0;
     const std::string    configured_reordering = configured_value("SC26_PANGULU_REORDERING", "reordering");
     const std::string    configured_reuse      = configured_value("SC26_PANGULU_REUSE", "reuse");
     if (configured_reordering == "L2") {
         reordering = L2;
     }
-    if (configured_reuse == "L1") {
+    if (configured_reuse == "L1")
         reuse = L1;
-    }
+    else if (configured_reuse == "L2")
+        reuse = L2;
     const auto create_status = pangulu_create(0, &created->handle);
     if (create_status != PANGULU_STATUS_SUCCESS) {
         return fail("pangulu_create", static_cast<int>(create_status));

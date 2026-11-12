@@ -1,7 +1,6 @@
 #include "multi_rhs_common.h"
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/solver_api.h"
-#include "solverchallenge26/rounds.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +25,9 @@ int main(int argc, char** argv)
      *   argv[4+] right-hand-side files
      *
      * The first five rounds warm up the product.  The last five rounds are
-     * measured.  Every round owns a new solver context and starts from x = 0.
+     * measured. Initialization and descriptors are created once; every round
+     * starts from x = 0 and reruns structure analysis, numerical factorization
+     * and solve without retaining previous-round results.
      */
     if (argc < 5) {
         fprintf(
@@ -46,13 +47,13 @@ int main(int argc, char** argv)
     sc26_multi_input(&input, &system);
 
     if (is_complex) {
-        for (int trial = sc26_first_round(); trial < sc26_round_limit(); ++trial) {
-            struct MySolver_complex solver;
+        struct MySolver_complex solver;
+        SC26_SOLVER_CREATE(&solver, &input);
+        for (int trial = 0; trial < 10; ++trial) {
             memset(system.x_all, 0,
                    sizeof(*system.x_all) * (size_t)system.n * (size_t)system.rhs_count);
             memset(system.x_im_all, 0,
                    sizeof(*system.x_im_all) * (size_t)system.n * (size_t)system.rhs_count);
-            SC26_SOLVER_CREATE(&solver, &input);
             start = sc26_multi_seconds();
             preprocess_complex(&solver, &input);
             direct_solver_complex(&solver, &input);
@@ -60,14 +61,14 @@ int main(int argc, char** argv)
             double elapsed = sc26_multi_seconds() - start;
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
             SC26_SOLVER_REPORT(&solver);
-            SC26_SOLVER_DESTROY(&solver, &input);
         }
+        SC26_SOLVER_DESTROY(&solver, &input);
     } else {
-        for (int trial = sc26_first_round(); trial < sc26_round_limit(); ++trial) {
-            struct MySolver solver;
+        struct MySolver solver;
+        SC26_SOLVER_CREATE(&solver, &input);
+        for (int trial = 0; trial < 10; ++trial) {
             memset(system.x_all, 0,
                    sizeof(*system.x_all) * (size_t)system.n * (size_t)system.rhs_count);
-            SC26_SOLVER_CREATE(&solver, &input);
             start = sc26_multi_seconds();
             preprocess(&solver, &input);
             direct_solver(&solver, &input);
@@ -75,8 +76,8 @@ int main(int argc, char** argv)
             double elapsed = sc26_multi_seconds() - start;
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
             SC26_SOLVER_REPORT(&solver);
-            SC26_SOLVER_DESTROY(&solver, &input);
         }
+        SC26_SOLVER_DESTROY(&solver, &input);
     }
 
     mem_usage();

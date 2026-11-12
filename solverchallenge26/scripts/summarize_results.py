@@ -124,26 +124,13 @@ def summarize_log(path):
     if rhs_checks:
         result["max_relative_l2"] = max(float(row[1]) for row in rhs_checks)
         result["max_absolute_max"] = max(float(row[2]) for row in rhs_checks)
-        expected_checks = 100 if "ROUND_BEGIN trial=" in text else 10
-        if len(rhs_checks) == expected_checks and all(row[3] == "PASS" for row in rhs_checks):
+        if len(rhs_checks) == 10 and all(row[3] == "PASS" for row in rhs_checks):
             result["status"] = "PASS"
         else:
             result["status"] = "FAIL"
     elif final_checks:
         result["max_relative_l2"] = max(float(row[0]) for row in final_checks)
         result["status"] = "PASS" if all(row[2] == "PASS" for row in final_checks) else "FAIL"
-
-    if "ROUND_BEGIN trial=" in text:
-        begins = [int(value) for value in re.findall(r"ROUND_BEGIN trial=(\d+)", text)]
-        ends = [(int(index), int(code)) for index, code in re.findall(
-            r"ROUND_END trial=(\d+) exit_code=(-?\d+)", text
-        )]
-        expected = list(range(WARMUP_ROUNDS + MEASURED_ROUNDS))
-        if (begins != expected or ends != [(index, 0) for index in expected]
-                or [row["trial"] for row in rounds] != expected):
-            result["status"] = "FAIL"
-        if not rhs_checks and len(final_checks) != len(expected):
-            result["status"] = "FAIL"
 
     error_markers = (
         "solver creation failed",

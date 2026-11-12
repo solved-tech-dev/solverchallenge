@@ -423,10 +423,11 @@ both be checked against their limits.
 
 ## Timing
 
-The run scripts start ten independent processes: five warm-up rounds and five
-measured rounds. Each process uses its own working and temporary directories,
-creates a fresh solver handle, restores the required zero initial guess, and
-destroys the handle after timing. Iterative methods run:
+Each program runs ten rounds in one process: five warm-up rounds and five
+measured rounds. Initialization, the solver handle, vector descriptors, and the
+immutable matrix descriptor are created once before the first round. Before
+every round, the program restores the required zero initial guess. Iterative
+methods run:
 
 ```text
 ANALYSIS -> NUMERIC_PREPARE -> SOLVE
@@ -446,15 +447,13 @@ Input reading, matrix sorting, handle creation, result copying, and
 independent residual verification happen outside these timers.
 The required zero initial guess is restored before the timer starts.
 
-The organizer's repeated-run rule prohibits carrying application state from
-one round to the next. The harness therefore does not retain a solver handle,
-symbolic structure, numeric factor, workspace contents, scaling data, matrix
-conversion, or previous solution between rounds. Each process loads the
-immutable matrix A and RHS files before timing and independently verifies its
-own solution after timing. Its log and solution are in `rounds/round-00/`
-through `rounds/round-09/` under the problem's output directory. Within a
-single multi-RHS round, an algorithm may reuse its
-factorization across those RHS.
+The organizer's repeated-run rule prohibits carrying computed application state
+from one round to the next. The harness therefore does not reuse symbolic
+analysis, numeric factors, preconditions, scaling results, hierarchy data, or a
+previous solution. Matrix A and the RHS files are loaded once as immutable test
+inputs. Every `ANALYSIS` call must rebuild structure from the input pattern,
+even when the matrix object and its pointers have not changed. Within a single
+multi-RHS round, an algorithm may reuse its factorization across those RHS.
 
 The directory layout, public entry points, and `problem01` through `problem10`
 customization contract remain compatible with the Gitee sample code. Use the

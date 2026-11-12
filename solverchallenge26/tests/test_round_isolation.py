@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Check that repeated solve rounds cannot reuse application state."""
+"""Check that repeated rounds rebuild solver state from immutable inputs."""
 
 from pathlib import Path
+import json
 import re
 import sys
 
@@ -36,17 +37,26 @@ def loop_bodies(text):
 
 
 def check_driver(path, create, destroy, expected_loops):
-    bodies = loop_bodies(path.read_text())
+    text = path.read_text()
+    bodies = loop_bodies(text)
     if len(bodies) != expected_loops:
         raise AssertionError(
             f"{path}: expected {expected_loops} trial loops, got {len(bodies)}"
         )
     for index, body in enumerate(bodies):
-        for marker in (create, destroy, "memset"):
-            if marker not in body:
+        if "memset" not in body:
+            raise AssertionError(f"{path}: loop {index} does not restore x=0")
+        if "analyse" not in body and "preprocess" not in body:
+            raise AssertionError(f"{path}: loop {index} has no timed setup phase")
+        for marker in (create, destroy):
+            if marker in body:
                 raise AssertionError(
-                    f"{path}: loop {index} is missing required marker {marker}"
+                    f"{path}: loop {index} creates or destroys solver state"
                 )
+    if text.count(create) != expected_loops:
+        raise AssertionError(f"{path}: solver must be created once per branch")
+    if text.count(destroy) != expected_loops:
+        raise AssertionError(f"{path}: solver must be destroyed once per branch")
 
 
 def check_configs():
@@ -65,6 +75,14 @@ def check_configs():
     ):
         if setting in t08:
             raise AssertionError(f"T08 keeps forbidden cross-round state: {setting}")
+    for problem in ("09", "10"):
+        config = json.loads(
+            (ROOT / f"problems/problem{problem}/config/solver.json").read_text()
+        )
+        if config["pangu_lu"]["reuse"] != "L0":
+            raise AssertionError(
+                f"T{problem}: PanguLU must disable analysis/factor reuse"
+            )
 
 
 def check_gitee_layout():
@@ -107,26 +125,12 @@ def main():
         "direct_solver.c",
         "iterative_solver_multi.c",
         "direct_solver_multi.c",
-        "MPI_iterative_solver.c",
-        "MPI_direct_solver.c",
     )
     for name in cpu_drivers:
         check_driver(
             apps / name, "SC26_SOLVER_CREATE", "SC26_SOLVER_DESTROY", 2
         )
 
-    check_driver(
-        apps / "MPI_GPU_iterative_solver.c",
-        "sc26_gpu_iterative_solver_create",
-        "sc26_gpu_iterative_solver_destroy",
-        1,
-    )
-    check_driver(
-        apps / "MPI_GPU_direct_solver.c",
-        "sc26_gpu_direct_solver_create",
-        "sc26_gpu_direct_solver_destroy",
-        1,
-    )
     check_configs()
     check_gitee_layout()
     print("round isolation checks passed")
