@@ -23,6 +23,9 @@ OUTPUT_FIELDS = (
     "iterations",
     "max_relative_l2",
     "max_absolute_max",
+    "gpu_peak_mb",
+    "gpu_limit_mb",
+    "gpu_memory_status",
 )
 
 
@@ -190,6 +193,21 @@ def summarize_log(path):
         + r" (PASS|FAIL)",
         text,
     )
+    gpu_peak = re.search(
+        r"(?m)^GPU_PEAK_MEMORY_MB=" + NUMBER + r"$", text
+    )
+    gpu_limit = re.search(
+        r"(?m)^GPU_MEMORY_LIMIT_MB=" + NUMBER + r"$", text
+    )
+    gpu_budget = re.search(
+        r"(?m)^GPU_MEMORY_BUDGET=(PASS|FAIL)$", text
+    )
+    if gpu_peak:
+        result["gpu_peak_mb"] = float(gpu_peak[1])
+    if gpu_limit:
+        result["gpu_limit_mb"] = float(gpu_limit[1])
+    if gpu_budget:
+        result["gpu_memory_status"] = gpu_budget[1]
 
     if rhs_checks:
         result["max_relative_l2"] = max(float(row[1]) for row in rhs_checks)
@@ -205,6 +223,15 @@ def summarize_log(path):
             if result["status"] != "FAIL":
                 result["status"] = "PASS"
         else:
+            result["status"] = "FAIL"
+
+    if case_name.startswith("T09"):
+        if (
+            "gpu_peak_mb" not in result
+            or "gpu_limit_mb" not in result
+            or result.get("gpu_memory_status") != "PASS"
+            or result["gpu_peak_mb"] >= result["gpu_limit_mb"]
+        ):
             result["status"] = "FAIL"
 
     error_markers = (

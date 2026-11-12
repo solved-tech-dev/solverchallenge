@@ -3,6 +3,8 @@
 
 #include "solverchallenge26/solver_input.h"
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,6 +22,11 @@ int sc26_pangulu_direct_solver_solve(
     struct sc26_pangulu_direct_solver *solver);
 void sc26_pangulu_direct_solver_report(
     struct sc26_pangulu_direct_solver *solver);
+int sc26_pangulu_direct_solver_memory_metrics(
+    struct sc26_pangulu_direct_solver *solver,
+    size_t *peak_bytes,
+    size_t *total_bytes,
+    int *available);
 int sc26_pangulu_direct_solver_finish(
     struct sc26_pangulu_direct_solver *solver);
 void sc26_pangulu_direct_solver_destroy(

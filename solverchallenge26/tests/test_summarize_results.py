@@ -116,6 +116,40 @@ class SummaryTimingTests(unittest.TestCase):
                 status = SUMMARY.main(["summarize_results.py", str(path)])
             self.assertEqual(status, 1)
 
+    def test_t09_requires_gpu_memory_budget(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T09.log"
+            make_log(path, "diagnostic")
+            result = SUMMARY.summarize_log(path)
+            self.assertEqual(result["status"], "FAIL")
+
+    def test_t09_passes_gpu_memory_budget(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T09.log"
+            make_log(path, "diagnostic")
+            path.write_text(
+                path.read_text()
+                + "GPU_PEAK_MEMORY_MB=44937.5000\n"
+                + "GPU_MEMORY_LIMIT_MB=102400\n"
+                + "GPU_MEMORY_BUDGET=PASS\n"
+            )
+            result = SUMMARY.summarize_log(path)
+            self.assertEqual(result["status"], "PASS")
+            self.assertEqual(result["gpu_memory_status"], "PASS")
+
+    def test_t09_fails_gpu_memory_budget(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T09.log"
+            make_log(path, "diagnostic")
+            path.write_text(
+                path.read_text()
+                + "GPU_PEAK_MEMORY_MB=102400.0000\n"
+                + "GPU_MEMORY_LIMIT_MB=102400\n"
+                + "GPU_MEMORY_BUDGET=PASS\n"
+            )
+            result = SUMMARY.summarize_log(path)
+            self.assertEqual(result["status"], "FAIL")
+
 
 if __name__ == "__main__":
     unittest.main()

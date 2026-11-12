@@ -6,6 +6,46 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef SC26_GPU_MEMORY_LIMIT_MB
+extern int sc26_problem_gpu_memory_metrics(
+    void *solver,
+    size_t *peak_bytes,
+    size_t *total_bytes,
+    int *available);
+#endif
+
+/* Report the measured device peak outside the timed solve phases. */
+static int report_memory_budget(void *solver)
+{
+#ifdef SC26_GPU_MEMORY_LIMIT_MB
+    static const size_t bytes_per_mb = 1024u * 1024u;
+    size_t peak_bytes = 0;
+    size_t total_bytes = 0;
+    int available = 0;
+    int passed;
+
+    if (sc26_problem_gpu_memory_metrics(
+            solver, &peak_bytes, &total_bytes, &available) != 0 ||
+        !available) {
+        printf("GPU_PEAK_MEMORY_MB=unavailable\n");
+        printf("GPU_MEMORY_LIMIT_MB=%d\n", SC26_GPU_MEMORY_LIMIT_MB);
+        printf("GPU_MEMORY_BUDGET=FAIL\n");
+        return 0;
+    }
+    passed = peak_bytes <
+             (size_t)SC26_GPU_MEMORY_LIMIT_MB * bytes_per_mb;
+    printf("GPU_PEAK_MEMORY_MB=%.4f\n",
+           (double)peak_bytes / (double)bytes_per_mb);
+    printf("GPU_TOTAL_MEMORY_MB=%.4f\n",
+           (double)total_bytes / (double)bytes_per_mb);
+    printf("GPU_MEMORY_LIMIT_MB=%d\n", SC26_GPU_MEMORY_LIMIT_MB);
+    printf("GPU_MEMORY_BUDGET=%s\n", passed ? "PASS" : "FAIL");
+    return passed;
+#else
+    (void)solver;
+    return 1;
+#endif
+}
 
 int main(int argc, char** argv)
 {
@@ -16,6 +56,7 @@ int main(int argc, char** argv)
     int is_complex;
     double start = 0.0;
     int pass;
+    int memory_pass;
 
     /*
      * Arguments:
@@ -62,6 +103,7 @@ int main(int argc, char** argv)
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
             SC26_SOLVER_REPORT(&solver);
         }
+        memory_pass = report_memory_budget(&solver);
         SC26_SOLVER_DESTROY(&solver, &input);
     } else {
         struct MySolver solver;
@@ -77,11 +119,12 @@ int main(int argc, char** argv)
             printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
             SC26_SOLVER_REPORT(&solver);
         }
+        memory_pass = report_memory_budget(&solver);
         SC26_SOLVER_DESTROY(&solver, &input);
     }
 
     mem_usage();
     pass = sc26_multi_verify(&system, residual_mode, tolerance);
     sc26_multi_free(&system);
-    return pass ? EXIT_SUCCESS : EXIT_FAILURE;
+    return pass && memory_pass ? EXIT_SUCCESS : EXIT_FAILURE;
 }
