@@ -68,15 +68,20 @@ runtime_file="runtime.env"
 if [[ "$problem" == "02" ]]; then
     runtime_file="runtime_${case_label}.env"
 fi
-profile_name="${SC26_PROFILE:-legacy}"
+requested_profile="${SC26_PROFILE:-legacy}"
+profile_name="$requested_profile"
 case "$profile_name" in
     legacy) ;;
     bw1000-26.48)
         case "$problem" in
             01|02|04|05|07|08)
-                profile_root="${SC26_PROFILE_ROOT:-${SC26_REPO_ROOT}/configs/bw1000-26.48}"
-                config_dir="${profile_root}/T${problem}${case_label:+-${case_label}}"
-                runtime_file="runtime.env"
+                if [[ "$problem" == "02" && -z "${SC26_PROFILE_ROOT:-}" && -z "${SC26_CONFIG_DIR:-}" ]]; then
+                    profile_name=legacy
+                else
+                    profile_root="${SC26_PROFILE_ROOT:-${SC26_REPO_ROOT}/configs/bw1000-26.48}"
+                    config_dir="${profile_root}/T${problem}${case_label:+-${case_label}}"
+                    runtime_file="runtime.env"
+                fi
                 ;;
             *) profile_name=legacy ;;
         esac
@@ -204,7 +209,11 @@ fi
 # performance table immediately after the run.
 solver_status=0
 {
-    printf 'SC26_PROFILE=%s\nSC26_CONFIG_DIR=%s\n' "$profile_name" "$SC26_CONFIG_DIR"
+    printf 'SC26_REQUESTED_PROFILE=%s\nSC26_PROFILE=%s\nSC26_CONFIG_DIR=%s\n' \
+        "$requested_profile" "$profile_name" "$SC26_CONFIG_DIR"
+    if [[ "$problem" == "02" && "$requested_profile" != "$profile_name" ]]; then
+        echo "T02 uses the original competition configuration with the public 26.48 packages."
+    fi
     "${runner[@]}" "$executable" "${program_args[@]}"
 } 2>&1 | tee "$output/run.log" || solver_status=$?
 
