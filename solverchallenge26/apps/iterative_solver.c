@@ -13,6 +13,7 @@
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/system_loader.h"
 #include "solverchallenge26/solver_api.h"
+#include "solverchallenge26/trial_report.h"
 
 int main(int argc, char** argv)
 {
@@ -126,7 +127,7 @@ int main(int argc, char** argv)
             preprocess(&mysolver, &solver_input);
             iterative_solver(&mysolver, &solver_input);
             double elapsed = GetCurrentTime() - tt;
-            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
+            sc26_report_trial(trial, elapsed / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
         }
         SC26_SOLVER_DESTROY(&mysolver, &solver_input);
@@ -145,7 +146,7 @@ int main(int argc, char** argv)
             preprocess_complex(&mysolver, &solver_input);
             iterative_solver_complex(&mysolver, &solver_input);
             double elapsed = GetCurrentTime() - tt;
-            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed / 1000.0);
+            sc26_report_trial(trial, elapsed / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
         }
         SC26_SOLVER_DESTROY(&mysolver, &solver_input);

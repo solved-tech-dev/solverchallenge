@@ -9,6 +9,7 @@
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/gpu_iterative_solver_api.h"
 #include "solverchallenge26/mpi_system_loader.h"
+#include "solverchallenge26/trial_report.h"
 
 static int parse_args(int argc, char **argv, int rank, char **matrix,
                       char **rhs, int *read_base, int *sys_type)
@@ -194,8 +195,7 @@ int main(int argc, char **argv)
         status = global_status;
 
         if (rank == 0 && !status)
-            fprintf(stdout, "TRIAL trial=%d raw_seconds=%.12f\n",
-                    trial, total_ms / 1000.0);
+            sc26_report_trial(trial, total_ms / 1000.0);
         if (trial >= warmup_frequency)
             measured_total_ms += total_ms;
     }

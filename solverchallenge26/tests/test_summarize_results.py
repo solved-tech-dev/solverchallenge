@@ -116,6 +116,30 @@ class SummaryTimingTests(unittest.TestCase):
                 status = SUMMARY.main(["summarize_results.py", str(path)])
             self.assertEqual(status, 1)
 
+    def test_separate_trial_log_avoids_interleaved_diagnostics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "T01_q2.log"
+            expected = make_log(path, "diagnostic")
+            text = path.read_text()
+            trial_lines = [
+                line for line in text.splitlines()
+                if line.startswith("TRIAL trial=")
+            ]
+            (Path(directory) / "trials.tsv").write_text(
+                "\n".join(trial_lines) + "\n"
+            )
+            path.write_text(
+                "\n".join(
+                    line for line in text.splitlines()
+                    if not line.startswith("TRIAL trial=")
+                ) + "\n"
+            )
+            result = SUMMARY.summarize_log(path)
+            self.assertEqual(result["status"], "PASS")
+            self.assertAlmostEqual(
+                result["time_ms"], expected * 1000.0, places=6
+            )
+
     def test_t09_requires_gpu_memory_budget(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "T09.log"

@@ -188,6 +188,19 @@ def check_product_reset():
         raise AssertionError("PanguLU reset entry point is missing")
 
 
+def check_trial_reporting():
+    for path in sorted((ROOT / "apps").glob("*.c")):
+        text = path.read_text()
+        if "TRIAL trial=" in text:
+            raise AssertionError(
+                f"{path}: trial marker must use the atomic reporting helper"
+            )
+        if "for (int trial" in text and "sc26_report_trial(" not in text:
+            raise AssertionError(
+                f"{path}: trial loop does not use sc26_report_trial"
+            )
+
+
 def main():
     apps = ROOT / "apps"
     cpu_drivers = (
@@ -204,6 +217,7 @@ def main():
     check_configs()
     check_run_script()
     check_product_reset()
+    check_trial_reporting()
     check_gitee_layout()
     print("round isolation checks passed")
 

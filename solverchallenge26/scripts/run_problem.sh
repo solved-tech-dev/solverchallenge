@@ -205,6 +205,10 @@ if [[ -n "${SC26_COMPAT_ROOT:-}" ]]; then
     )
 fi
 
+trial_log="${output}/trials.tsv"
+: > "$trial_log"
+export SC26_TRIAL_LOG="$trial_log"
+
 # Keep the complete solver output for diagnostics, and create the compact
 # performance table immediately after the run.
 solver_status=0

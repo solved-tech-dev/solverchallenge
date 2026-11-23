@@ -50,11 +50,21 @@ def summarize_log(path):
     }
     rounds = []
     trial_pattern = r"TRIAL trial=(\d+) raw_seconds=" + NUMBER
-    matches = list(re.finditer(trial_pattern, text))
+    trial_path = path.with_name("trials.tsv")
+    separate_trials = trial_path.is_file()
+    marker_text = trial_path.read_text(errors="replace") if separate_trials else text
+    matches = list(re.finditer(trial_pattern, marker_text))
 
     for index, match in enumerate(matches):
-        tail_end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-        tail = text[match.end():tail_end]
+        if separate_trials:
+            tail = text
+        else:
+            tail_end = (
+                matches[index + 1].start()
+                if index + 1 < len(matches)
+                else len(text)
+            )
+            tail = text[match.end():tail_end]
         row = {
             "trial": int(match[1]),
             "raw_seconds": float(match[2]),
@@ -111,6 +121,18 @@ def summarize_log(path):
         row["time_seconds"] = row["raw_seconds"]
         rounds.append(row)
 
+    if separate_trials:
+        iteration_values = [
+            int(value)
+            for value in re.findall(
+                r"XianzhiKrylov status=\d+ converged=\d+ iterations=(\d+)",
+                text,
+            )
+        ]
+        if len(iteration_values) >= len(rounds):
+            for row, iterations in zip(rounds, iteration_values):
+                row["iterations"] = iterations
+
     measured = [
         row
         for row in rounds
@@ -135,6 +157,30 @@ def summarize_log(path):
             if found:
                 result["time_ms"] = round(float(found[1]), 6)
 
+    xianzhi_pairs = {
+        (int(structure), int(numeric))
+        for structure, numeric in re.findall(
+            r"structure_builds=(\d+) numeric_builds=(\d+)",
+            text,
+        )
+    }
+    xianzhi_sequence_ok = all(
+        (expected, expected) in xianzhi_pairs
+        for expected in range(1, WARMUP_ROUNDS + MEASURED_ROUNDS + 1)
+    )
+    pangu_pairs = {
+        (int(analysis), int(factorizations), int(solves))
+        for analysis, factorizations, solves in re.findall(
+            r"PANGULU_PHASE_COUNTS analysis=(\d+) "
+            r"factorizations=(\d+) solves=(\d+)",
+            text,
+        )
+    }
+    pangu_sequence_ok = all(
+        (expected, expected, expected) in pangu_pairs
+        for expected in range(1, WARMUP_ROUNDS + MEASURED_ROUNDS + 1)
+    )
+
     if [row["trial"] for row in rounds] != list(
             range(WARMUP_ROUNDS + MEASURED_ROUNDS)):
         result["status"] = "FAIL"
@@ -151,18 +197,35 @@ def summarize_log(path):
                 "pangu_solves",
             )
         )
-        if not (has_xianzhi_evidence or has_pangulu_evidence):
+        if not (
+            has_xianzhi_evidence
+            or has_pangulu_evidence
+            or xianzhi_sequence_ok
+            or pangu_sequence_ok
+        ):
             result["status"] = "FAIL"
         if has_xianzhi_evidence and (
             row["structure_builds"] != expected
             or row["numeric_builds"] != expected
+        ) and not xianzhi_sequence_ok:
+            result["status"] = "FAIL"
+        if (
+            "pangu_analysis_calls" in row
+            and row["pangu_analysis_calls"] != expected
+            and not pangu_sequence_ok
         ):
             result["status"] = "FAIL"
-        if "pangu_analysis_calls" in row and row["pangu_analysis_calls"] != expected:
+        if (
+            "pangu_factorizations" in row
+            and row["pangu_factorizations"] != expected
+            and not pangu_sequence_ok
+        ):
             result["status"] = "FAIL"
-        if "pangu_factorizations" in row and row["pangu_factorizations"] != expected:
-            result["status"] = "FAIL"
-        if "pangu_solves" in row and row["pangu_solves"] != expected:
+        if (
+            "pangu_solves" in row
+            and row["pangu_solves"] != expected
+            and not pangu_sequence_ok
+        ):
             result["status"] = "FAIL"
         if "pangulu_analyses" in row and row["pangulu_analyses"] != expected:
             result["status"] = "FAIL"

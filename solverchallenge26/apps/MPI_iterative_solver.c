@@ -15,6 +15,7 @@
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/mpi_system_loader.h"
 #include "solverchallenge26/solver_api.h"
+#include "solverchallenge26/trial_report.h"
 
 int main(int argc, char** argv)
 {
@@ -167,8 +168,7 @@ int main(int argc, char** argv)
             MPI_Barrier(MPI_COMM_WORLD);
             double elapsed_ms = (MPI_Wtime() - tt) * 1000.0;
             if (myrank == 0)
-                fprintf(stdout, "TRIAL trial=%d raw_seconds=%.12f\n",
-                        trial, elapsed_ms / 1000.0);
+                sc26_report_trial(trial, elapsed_ms / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
             SC26_SOLVER_DESTROY(&mysolver, &solver_input);
             if (trial >= warmup_frequency)
@@ -190,8 +190,7 @@ int main(int argc, char** argv)
             MPI_Barrier(MPI_COMM_WORLD);
             double elapsed_ms = (MPI_Wtime() - tt) * 1000.0;
             if (myrank == 0)
-                fprintf(stdout, "TRIAL trial=%d raw_seconds=%.12f\n",
-                        trial, elapsed_ms / 1000.0);
+                sc26_report_trial(trial, elapsed_ms / 1000.0);
             SC26_SOLVER_REPORT(&mysolver);
             SC26_SOLVER_DESTROY(&mysolver, &solver_input);
             if (trial >= warmup_frequency)

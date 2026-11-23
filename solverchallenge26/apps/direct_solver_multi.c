@@ -1,6 +1,7 @@
 #include "multi_rhs_common.h"
 #include "solverchallenge26/diagnostics.h"
 #include "solverchallenge26/solver_api.h"
+#include "solverchallenge26/trial_report.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,7 +102,7 @@ int main(int argc, char** argv)
             direct_solver_complex(&solver, &input);
             solve_complex(&solver, &input);
             double elapsed = sc26_multi_seconds() - start;
-            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
+            sc26_report_trial(trial, elapsed);
             SC26_SOLVER_REPORT(&solver);
         }
         memory_pass = report_memory_budget(&solver);
@@ -118,7 +119,7 @@ int main(int argc, char** argv)
             direct_solver(&solver, &input);
             solve(&solver, &input);
             double elapsed = sc26_multi_seconds() - start;
-            printf("TRIAL trial=%d raw_seconds=%.12f\n", trial, elapsed);
+            sc26_report_trial(trial, elapsed);
             SC26_SOLVER_REPORT(&solver);
         }
         memory_pass = report_memory_budget(&solver);

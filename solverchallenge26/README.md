@@ -335,6 +335,7 @@ Every result directory contains:
 
 ```text
 run.log
+trials.tsv
 performance.tsv
 performance.json
 answer_x.rhs
@@ -342,6 +343,8 @@ answer_x.rhs
 
 `run.log` contains the complete solver output. `performance.tsv` and
 `performance.json` use the same columns and fields as the all-problems run.
+`trials.tsv` is the authoritative ten-round timing record and is kept separate
+so concurrent library diagnostics cannot split a round marker.
 `answer_x.rhs`, when produced, contains the computed solution.
 
 #### Problems with one RHS: T03, T04, T05, T06, and T07
