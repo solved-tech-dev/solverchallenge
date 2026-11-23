@@ -234,6 +234,17 @@ def check_public_2648_profiles():
     run_script = (ROOT / "scripts/run_problem.sh").read_text()
     if "T02 uses the original competition configuration" in run_script:
         raise AssertionError("T02 must use the public bw1000-26.48 profile")
+    for profile in ("T02-q1", "T02-q2"):
+        for path in sorted((ROOT / "configs/bw1000-26.48" / profile).glob("amg_*.json")):
+            config = json.loads(path.read_text())
+            if "execution" in config:
+                raise AssertionError(
+                    f"{path}: partial execution block masks required runtime.env settings"
+                )
+            if config.get("setup", {}).get("reuse_structure") != 0:
+                raise AssertionError(
+                    f"{path}: T02 must rebuild structure every round"
+                )
 
 
 def main():

@@ -273,7 +273,9 @@ SC26_PROFILE=bw1000-26.48 SC26_PROBLEMS=01,02,04,05,07,08 \
 This selects the per-case JSON and runtime settings under
 `configs/bw1000-26.48/` for T01, T02, T04, T05, T07, and T08. The T02
 profile includes the aggregation and RAP settings required to avoid the
-slow coarse-grid construction path.
+slow coarse-grid construction path. Its AMG JSON intentionally leaves the
+`execution` section unset so the tuned options in `runtime.env`, including
+FP32 graph and ELL5 settings, remain active.
 
 The run log records the requested profile, effective profile and selected
 configuration directory. The application starts with a zero

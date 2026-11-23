@@ -29,11 +29,5 @@
     "coarse_solver_method": "smooth_only",
     "scaling": "none",
     "print_level": 0
-  },
-  "execution": {
-    "scalar_sa": 1,
-    "fp32_cycle": 1,
-    "one_cycle": 1,
-    "zero_start_apply": 1
   }
 }
