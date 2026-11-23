@@ -1,0 +1,17 @@
+{
+  "extended_solver": {
+    "method": "fgmres_dd",
+    "provider": "linglongamg",
+    "library_path": "@LINGLONGAMG_LIBRARY@",
+    "config_path": "@LINGLONGAMG_CONFIG@",
+    "restart": 3,
+    "max_cycles": 35,
+    "relative_tolerance": 9e-11,
+    "spmv_width": 4,
+    "mgs_passes": 1,
+    "inner_method": "fgmres4",
+    "constant_augment": true,
+    "constant_galerkin": true,
+    "fused_mgs": true
+  }
+}

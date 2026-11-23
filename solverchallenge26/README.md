@@ -258,6 +258,29 @@ SC26_PROBLEMS=01,04,07 ./scripts/run_all_problems.sh "$DATA_ROOT"
 
 The script prints the result directory and the final performance table.
 
+#### BW1000 with the 26.48 packages
+
+For T01, T02, T04, T05, T07, and T08, select the 26.48 configuration set.
+Use the XianzhiKrylov 26.48 package that matches the loaded DTK runtime. T01,
+T02, T04, and T05 also require LinglongAMG 26.48 for the same DTK version.
+Use DTK 25.04.4 or DTK 26.04 when both required packages are available for it.
+
+```bash
+SC26_PROFILE=bw1000-26.48 SC26_PROBLEMS=01,02,04,05,07,08 \
+  ./scripts/run_all_problems.sh "$DATA_ROOT"
+```
+
+This selects the per-case JSON under `configs/bw1000-26.48/`. The run log
+records the selected configuration directory. The application starts with a zero
+initial guess and rebuilds analysis and numerical preparation in all ten
+rounds. The summary averages rounds 6 to 10. T08 solves ten right-hand sides
+together and checks every final solution against the original system.
+
+The commands above this section use the original competition configurations.
+Use `SC26_PROFILE=legacy` to select them explicitly. To use an alternative
+configuration set with the 26.48 runner, set `SC26_PROFILE_ROOT` to its absolute
+path and use the same per-case layout as `configs/bw1000-26.48/`.
+
 ### Find and read the results
 
 ```bash
@@ -462,8 +485,9 @@ outside all measured intervals.
   corresponding product package directory is writable.
 - License expired or machine mismatch: request a key for the current GPU
   allocation; do not reuse a key issued for another card.
-- `BATCH_ERROR out of memory` in T08: use the current 26.46 XianzhiKrylov
-  package. Do not reduce `batch`; that was not a numerically valid workaround.
+- `BATCH_ERROR out of memory` in T08: check that the installed XianzhiKrylov
+  package matches the selected configuration set and DTK runtime. Keep all
+  ten right-hand sides in the configured batch.
 - T04 numeric preparation fails: verify that the LinglongAMG package matches
   the runtime used for the build and that its version supports the T04
   configuration.

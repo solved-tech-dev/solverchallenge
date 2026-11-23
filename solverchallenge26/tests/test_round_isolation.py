@@ -76,7 +76,9 @@ def check_driver(path, create, destroy, expected_loops):
 
 
 def check_configs():
-    for path in (ROOT / "problems").glob("problem*/config/*"):
+    cases = list((ROOT / "problems").glob("problem*/config"))
+    cases += sorted((ROOT / "configs/bw1000-26.48").glob("T*"))
+    for path in (file for case in cases for file in case.iterdir()):
         if not path.is_file():
             continue
         text = path.read_text(errors="replace")
@@ -94,7 +96,7 @@ def check_configs():
                     f"{path}: LinglongAMG must rebuild structure every round"
                 )
 
-    for path in (ROOT / "problems").glob("problem*/config/runtime*.env"):
+    for path in (file for case in cases for file in case.glob("runtime*.env")):
         text = path.read_text(errors="replace")
         for setting in (
             "XI_FILL_CACHE=1",

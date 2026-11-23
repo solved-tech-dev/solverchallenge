@@ -1,0 +1,36 @@
+{
+  "config_version": 2,
+  "execution": {
+    "elasticity_sa6": 1,
+    "elasticity_aggregate_size": 32,
+    "one_cycle": 1,
+    "zero_start_apply": 1
+  },
+  "setup": {
+    "block_size": 1,
+    "max_levels": 12,
+    "min_coarse_size": 32,
+    "strong_threshold": 0.02,
+    "presweeps": 2,
+    "postsweeps": 2,
+    "jacobi_omega": 1.0
+  },
+  "solve": {
+    "method": "amg",
+    "preconditioner": "amg",
+    "max_iters": 1,
+    "tolerance": 1e-30,
+    "cycle": "v",
+    "smoother": "chebyshev_poly",
+    "cheby_order": 2,
+    "cheby_lambda_iters": 12,
+    "convergence": "rel_ini",
+    "norm": "l2",
+    "spmv_backend": "manual",
+    "vector_backend": "manual",
+    "scaling": "none",
+    "mixed_precision": "off",
+    "solve_variant": "baseline",
+    "print_level": 0
+  }
+}

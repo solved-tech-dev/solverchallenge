@@ -63,15 +63,37 @@ else
     unset SC26_CASE
 fi
 
-config_dir="${SC26_CONFIG_DIR:-${SC26_REPO_ROOT}/problems/problem${problem}/config}"
-export SC26_CONFIG_DIR="$config_dir"
-
-# Every problem can supply a runtime profile.  T02 has one profile for each
-# accuracy requirement.
-profile="${SC26_CONFIG_DIR}/runtime.env"
+config_dir="${SC26_REPO_ROOT}/problems/problem${problem}/config"
+runtime_file="runtime.env"
 if [[ "$problem" == "02" ]]; then
-    profile="${SC26_CONFIG_DIR}/runtime_${case_label}.env"
+    runtime_file="runtime_${case_label}.env"
 fi
+profile_name="${SC26_PROFILE:-legacy}"
+case "$profile_name" in
+    legacy) ;;
+    bw1000-26.48)
+        case "$problem" in
+            01|02|04|05|07|08)
+                profile_root="${SC26_PROFILE_ROOT:-${SC26_REPO_ROOT}/configs/bw1000-26.48}"
+                config_dir="${profile_root}/T${problem}${case_label:+-${case_label}}"
+                runtime_file="runtime.env"
+                ;;
+            *) profile_name=legacy ;;
+        esac
+        ;;
+    *)
+        echo "SC26_PROFILE must be legacy or bw1000-26.48" >&2
+        exit 2
+        ;;
+esac
+config_dir="${SC26_CONFIG_DIR:-$config_dir}"
+if [[ ! -d "$config_dir" ]]; then
+    echo "Problem configuration directory not found: $config_dir" >&2
+    exit 2
+fi
+export SC26_CONFIG_DIR="$(realpath -e -- "$config_dir")"
+
+profile="${SC26_CONFIG_DIR}/${runtime_file}"
 if [[ -f "$profile" ]]; then
     # shellcheck disable=SC1090
     source "$profile"
@@ -181,8 +203,10 @@ fi
 # Keep the complete solver output for diagnostics, and create the compact
 # performance table immediately after the run.
 solver_status=0
-"${runner[@]}" "$executable" "${program_args[@]}" 2>&1 |
-    tee "$output/run.log" || solver_status=$?
+{
+    printf 'SC26_PROFILE=%s\nSC26_CONFIG_DIR=%s\n' "$profile_name" "$SC26_CONFIG_DIR"
+    "${runner[@]}" "$executable" "${program_args[@]}"
+} 2>&1 | tee "$output/run.log" || solver_status=$?
 
 summary_status=0
 SC26_RESULT_CASE="$result_case" \
