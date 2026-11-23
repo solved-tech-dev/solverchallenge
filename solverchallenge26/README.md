@@ -270,10 +270,10 @@ SC26_PROFILE=bw1000-26.48 SC26_PROBLEMS=01,02,04,05,07,08 \
   ./scripts/run_all_problems.sh "$DATA_ROOT"
 ```
 
-This selects the per-case JSON under `configs/bw1000-26.48/` for T01, T04,
-T05, T07, and T08. Both T02 questions use the original competition
-configuration, which passed residual checks with the 26.48 packages.
-The alternative T02 configuration timed out in BW1000 testing.
+This selects the per-case JSON and runtime settings under
+`configs/bw1000-26.48/` for T01, T02, T04, T05, T07, and T08. The T02
+profile includes the aggregation and RAP settings required to avoid the
+slow coarse-grid construction path.
 
 The run log records the requested profile, effective profile and selected
 configuration directory. The application starts with a zero
@@ -285,8 +285,6 @@ The commands above this section use the original competition configurations.
 Use `SC26_PROFILE=legacy` to select them explicitly. To use an alternative
 configuration set with the 26.48 runner, set `SC26_PROFILE_ROOT` to its absolute
 path and use the same per-case layout as `configs/bw1000-26.48/`.
-An explicitly supplied alternate configuration set also selects its T02
-configuration when running either T02 question.
 
 ### Find and read the results
 

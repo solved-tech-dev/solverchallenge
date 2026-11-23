@@ -201,6 +201,41 @@ def check_trial_reporting():
             )
 
 
+def check_public_2648_profiles():
+    expected = {
+        "T02-q1": (
+            "LINGLONG_RAP_FORCE_TWOSTEP=1",
+            "LLA_SCALAR_SA=1",
+            "Q1_FACTOR_RAP=1",
+            "XK_T02_PRIORITY_SA=1",
+            "XK_T02_RADIUS_ALL=1",
+        ),
+        "T02-q2": (
+            "LINGLONG_RAP_FORCE_TWOSTEP=1",
+            "LLA_SCALAR_SA=1",
+            "Q2_FUSED_RZ=1",
+            "XK_T02_PRIORITY_SA=1",
+            "XK_T2_PCG_STEPS=20",
+            "XK_T2_INNER_NEXT_STEPS=18",
+        ),
+        "T05": (
+            "T5_BCSR_W=4",
+            "T5_COARSE_BF16=1",
+            "T5_COARSE_FAST_INV=1",
+            "T5_DILU_MIN_PACKED=256",
+        ),
+    }
+    for profile, markers in expected.items():
+        path = ROOT / "configs/bw1000-26.48" / profile / "runtime.env"
+        text = path.read_text()
+        for marker in markers:
+            if marker not in text:
+                raise AssertionError(f"{path}: missing tuned setting {marker}")
+    run_script = (ROOT / "scripts/run_problem.sh").read_text()
+    if "T02 uses the original competition configuration" in run_script:
+        raise AssertionError("T02 must use the public bw1000-26.48 profile")
+
+
 def main():
     apps = ROOT / "apps"
     cpu_drivers = (
@@ -218,6 +253,7 @@ def main():
     check_run_script()
     check_product_reset()
     check_trial_reporting()
+    check_public_2648_profiles()
     check_gitee_layout()
     print("round isolation checks passed")
 
